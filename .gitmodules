@@ -1,0 +1,6 @@
+[submodule "Lib/FreeRTOS-Kernel"]
+	path = Lib/FreeRTOS-Kernel
+	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
+[submodule "Lib/FreeRTOS-Plus-TCP"]
+	path = Lib/FreeRTOS-Plus-TCP
+	url = git@github.com:FreeRTOS/FreeRTOS-Plus-TCP.git
