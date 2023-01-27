@@ -189,6 +189,7 @@ void TIM7_IRQHandler(void)
   /* USER CODE END TIM7_IRQn 1 */
 }
 
+#if 0
 /**
   * @brief This function handles Ethernet global interrupt.
   */
@@ -216,6 +217,7 @@ void ETH_WKUP_IRQHandler(void)
 
   /* USER CODE END ETH_WKUP_IRQn 1 */
 }
+#endif
 
 /* USER CODE BEGIN 1 */
 
