@@ -447,6 +447,23 @@ uint32_t ulApplicationGetNextSequenceNumber( uint32_t ulSourceAddress,
 }
 /*-----------------------------------------------------------*/
 
+TaskHandle_t network_up_task_handle;
+BaseType_t network_up_task_create_ret_status;
+
+static void network_up_status_thread_fn(void *io_params) {
+	while(1) {
+		for (int i = 0; i < 4; ++i)
+		{
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
+			vTaskDelay(50);
+		}
+		vTaskDelay(200);
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		vTaskDelay(20);
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+	}
+}
+
 void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 {
     /* If the network has just come up...*/
@@ -484,6 +501,9 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 
         FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
         configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
+
+        network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
+        configASSERT(network_up_task_create_ret_status == pdPASS);
     }
 }
 /*-----------------------------------------------------------*/
