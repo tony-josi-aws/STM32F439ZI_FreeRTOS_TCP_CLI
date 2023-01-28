@@ -189,11 +189,16 @@ static void prvCliTask( void *pvParameters )
         if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
         {
             uint8_t ucPacketNumber = 1;
-
+#ifdef TIM7_TEST
+            extern uint32_t tim7_period;
+            configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
+                                                                             xSourceAddress.sin_port,
+                                                                             &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+#else
             configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
                                                                              xSourceAddress.sin_port,
                                                                              &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
-
+#endif
             do
             {
                 /* Send the received command to the FreeRTOS+CLI. */
@@ -459,8 +464,10 @@ static void network_up_status_thread_fn(void *io_params) {
 		}
 		vTaskDelay(200);
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
 		vTaskDelay(20);
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
 	}
 }
 
