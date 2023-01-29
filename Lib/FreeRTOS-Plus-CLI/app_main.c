@@ -82,6 +82,10 @@ extern RNG_HandleTypeDef hrng;
 static char cInputCommandString[ configMAX_COMMAND_INPUT_SIZE + 1 ];
 
 static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LENGTH ];
+
+TaskHandle_t network_up_task_handle;
+BaseType_t network_up_task_create_ret_status, network_up;
+
 /*-----------------------------------------------------------*/
 
 static void prvCliTask( void * pvParameters );
@@ -105,6 +109,9 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
                                             socklen_t xSourceAddressLength,
                                             uint8_t *pucPacketNumber,
                                             uint8_t *pucRequestId );
+
+static void network_up_status_thread_fn(void *io_params);
+
 /*-----------------------------------------------------------*/
 
 void app_main( void )
@@ -128,6 +135,9 @@ void app_main( void )
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
+
+    network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
+    configASSERT(network_up_task_create_ret_status == pdPASS);
 
     /* Start the RTOS scheduler. */
     vTaskStartScheduler();
@@ -452,11 +462,13 @@ uint32_t ulApplicationGetNextSequenceNumber( uint32_t ulSourceAddress,
 }
 /*-----------------------------------------------------------*/
 
-TaskHandle_t network_up_task_handle;
-BaseType_t network_up_task_create_ret_status;
-
 static void network_up_status_thread_fn(void *io_params) {
 	while(1) {
+		if (network_up == 0)
+		{
+			ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+		}
+
 		for (int i = 0; i < 4; ++i)
 		{
 			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
@@ -509,8 +521,13 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
         FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
         configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
 
-        network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
-        configASSERT(network_up_task_create_ret_status == pdPASS);
+        network_up = 1;
+        xTaskNotifyGive( network_up_task_handle );
+
+    }
+    else if( eNetworkEvent == eNetworkDown )
+    {
+    	network_up = 0;
     }
 }
 /*-----------------------------------------------------------*/
