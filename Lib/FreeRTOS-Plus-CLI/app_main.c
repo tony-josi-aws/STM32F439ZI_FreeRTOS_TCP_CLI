@@ -134,8 +134,38 @@ void app_main( void )
     configASSERT( xRet == pdPASS );
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
-    FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
+    //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
+	#if ( ipconfigMULTI_INTERFACE == 1 ) && ( ipconfigCOMPATIBLE_WITH_SINGLE == 0 )
+    	static NetworkInterface_t xInterfaces[1];
+    	static NetworkEndPoint_t xEndPoints[4];
+	#endif
+    //FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
+	memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
 
+	/* Initialize the network interface.*/
+	#if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 )
+    {
+		/* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
+		FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
+		FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+	}
+    #else
+    {
+	    /* Initialize the interface descriptor for WinPCap. */
+		pxFillInterfaceDescriptor(0, &(xInterfaces[0]));
+	    /* === End-point 0 === */
+		FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+        #if ( ipconfigUSE_DHCP != 0 )
+        {
+            /* End-point 0 wants to use DHCPv4. */
+            xEndPoints[0].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+        }
+        #endif /* ( ipconfigUSE_DHCP != 0 ) */
+		FreeRTOS_IPStart();
+	}
+    #endif /* if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 ) */
+
+    /* Task to display network status */
     network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
     configASSERT(network_up_task_create_ret_status == pdPASS);
 
@@ -145,6 +175,7 @@ void app_main( void )
     /* Infinite loop */
     for(;;)
     {
+        
     }
 }
 /*-----------------------------------------------------------*/
@@ -483,7 +514,7 @@ static void network_up_status_thread_fn(void *io_params) {
 	}
 }
 
-void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
+void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent, struct xNetworkEndPoint* pxEndPoint )
 {
     /* If the network has just come up...*/
     if( eNetworkEvent == eNetworkUp )
@@ -508,7 +539,7 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 
         /* Print out the network configuration, which may have come from a DHCP
          * server. */
-        FreeRTOS_GetAddressConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress );
+        FreeRTOS_GetEndPointConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress, pxNetworkEndPoints );
         FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
         configPRINTF( ( "IP Address: %s\n", cBuffer ) );
 
@@ -532,7 +563,8 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 }
 /*-----------------------------------------------------------*/
 
-BaseType_t xApplicationDNSQueryHook( const char *pcName )
+#if ( ipconfigUSE_LLMNR != 0 ) || ( ipconfigUSE_NBNS != 0 )
+BaseType_t xApplicationDNSQueryHook( struct xNetworkEndPoint * pxEndPoint, const char * pcName )
 {
     BaseType_t xReturn = pdFAIL;
 
@@ -545,6 +577,8 @@ BaseType_t xApplicationDNSQueryHook( const char *pcName )
     }
     return xReturn;
 }
+#endif
+
 /*-----------------------------------------------------------*/
 
 const char *pcApplicationHostnameHook( void )
