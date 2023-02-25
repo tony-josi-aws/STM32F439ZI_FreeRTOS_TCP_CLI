@@ -30,8 +30,8 @@
 
 
 /* FreeRTOS+TCP includes. */
-#include "FreeRTOS_Sockets.h"
 #include "FreeRTOS_IP.h"
+#include "FreeRTOS_Sockets.h"
 
 /* Logging includes. */
 #include "logging.h"
@@ -42,10 +42,11 @@
 /* Pcap capture includes. */
 #include "pcap_capture.h"
 
+
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
-
+#define USE_ZERO_COPY 						1
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
 #define mainLOGGING_TASK_PRIORITY           tskIDLE_PRIORITY
@@ -215,12 +216,32 @@ static void prvCliTask( void *pvParameters )
     {
         uint8_t ucRequestId[ 4 ];
 
-        xCount = FreeRTOS_recvfrom( xCLIServerSocket,
-                                    ( void * )( &( cInputCommandString[ 0 ] ) ),
-                                    configMAX_COMMAND_INPUT_SIZE,
-                                    0,
-                                    &( xSourceAddress ),
-                                    &( xSourceAddressLength ) );
+#if USE_ZERO_COPY
+
+            uint8_t *pucReceivedUDPPayload = NULL;
+            xCount = FreeRTOS_recvfrom( xCLIServerSocket,
+                                        &pucReceivedUDPPayload,
+                                        0,
+										FREERTOS_ZERO_COPY,
+                                        &( xSourceAddress ),
+                                        &( xSourceAddressLength ) );
+
+            configASSERT( (pucReceivedUDPPayload != NULL) && (xCount < configMAX_COMMAND_INPUT_SIZE));
+
+            memcpy(( void * )( &( cInputCommandString[ 0 ] ) ), pucReceivedUDPPayload, xCount);
+
+            FreeRTOS_ReleaseUDPPayloadBuffer( ( void * ) pucReceivedUDPPayload );
+
+#else
+
+            xCount = FreeRTOS_recvfrom( xCLIServerSocket,
+                                        ( void * )( &( cInputCommandString[ 0 ] ) ),
+                                        configMAX_COMMAND_INPUT_SIZE,
+                                        0,
+                                        &( xSourceAddress ),
+                                        &( xSourceAddressLength ) );
+
+#endif /* USE_ZERO_COPY */
 
         /* Since we set the receive timeout to portMAX_DELAY, the
          * above call should only return when a command is received. */
@@ -394,12 +415,30 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
     header.usPayloadLength = 0U;
     memcpy( &( header.ucRequestId[ 0 ] ), pucRequestId, 4 );
 
-    lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
-                                  ( const void * ) &( header ),
-                                  sizeof( PacketHeader_t ),
-                                  0,
-                                  pxSourceAddress,
-                                  xSourceAddressLength );
+#if USE_ZERO_COPY
+        /*
+        * First obtain a buffer of adequate length from the TCP/IP stack into which
+        the string will be written. */
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+        configASSERT( pucBuffer != NULL );
+        memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
+
+        lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
+                                    ( void * ) ( pucBuffer ),
+                                    sizeof( PacketHeader_t ),
+                                    FREERTOS_ZERO_COPY,
+                                    pxSourceAddress,
+                                    xSourceAddressLength );
+#else
+
+        lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
+                                    ( void * ) ( &header ),
+                                    sizeof( PacketHeader_t ),
+                                    0,
+                                    pxSourceAddress,
+                                    xSourceAddressLength );
+
+#endif /* USE_ZERO_COPY */
 
     if( lBytesSent != PACKET_HEADER_LENGTH )
     {
@@ -452,13 +491,34 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
                 &( pucResponse[ ulBytesSent ] ),
                 ulBytesToSend );
 
-        /* Send response. */
-        lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
-                                      ( const void * ) &( ucUdpResponseBuffer[ 0 ] ),
-                                      ulBytesToSend + PACKET_HEADER_LENGTH,
-                                      0,
-                                      pxSourceAddress,
-                                      xSourceAddressLength );
+
+
+#if USE_ZERO_COPY
+            /*
+            * First obtain a buffer of adequate length from the TCP/IP stack into which
+            the string will be written. */
+            uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
+            configASSERT( pucBuffer != NULL );
+            memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
+
+            /* Send response. */
+            lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
+                                        ( void * ) pucBuffer,
+                                        ulBytesToSend + PACKET_HEADER_LENGTH,
+                                        FREERTOS_ZERO_COPY,
+                                        pxSourceAddress,
+                                        xSourceAddressLength );
+#else
+
+            /* Send response. */
+            lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
+                                        ( void * ) &( ucUdpResponseBuffer[ 0 ] ),
+                                        ulBytesToSend + PACKET_HEADER_LENGTH,
+                                        0,
+                                        pxSourceAddress,
+                                        xSourceAddressLength );
+
+#endif /* USE_ZERO_COPY */
 
         if( lBytesSent != ( ulBytesToSend + PACKET_HEADER_LENGTH ) )
         {
