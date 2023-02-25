@@ -3,4 +3,4 @@
 	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
 [submodule "Lib/FreeRTOS-Plus-TCP"]
 	path = Lib/FreeRTOS-Plus-TCP
-	url = git@github.com:FreeRTOS/FreeRTOS-Plus-TCP.git
+	url = git@github.com:tony-josi-aws/FreeRTOS-Plus-TCP.git
