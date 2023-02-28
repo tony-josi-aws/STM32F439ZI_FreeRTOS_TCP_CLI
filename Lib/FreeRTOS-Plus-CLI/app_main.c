@@ -46,6 +46,8 @@
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
+
+#define USE_OLD_GET_UDP_BUFFER_API			1
 #define USE_ZERO_COPY 						1
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
@@ -422,7 +424,7 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
 #if USE_OLD_GET_UDP_BUFFER_API
         uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
 #else
-        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_IPv46( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_ByIPType( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
 #endif /* USE_OLD_GET_UDP_BUFFER_API */
         configASSERT( pucBuffer != NULL );
         memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
@@ -504,7 +506,7 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
 #if USE_OLD_GET_UDP_BUFFER_API
         	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY );
 #else
-        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_IPv46( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_ByIPType( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
 #endif /* USE_OLD_GET_UDP_BUFFER_API */
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
