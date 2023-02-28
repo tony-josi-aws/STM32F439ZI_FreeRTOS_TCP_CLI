@@ -419,7 +419,11 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
         /*
         * First obtain a buffer of adequate length from the TCP/IP stack into which
         the string will be written. */
-        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+#if USE_OLD_GET_UDP_BUFFER_API
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
+#else
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_IPv46( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+#endif /* USE_OLD_GET_UDP_BUFFER_API */
         configASSERT( pucBuffer != NULL );
         memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
 
@@ -497,7 +501,11 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
             /*
             * First obtain a buffer of adequate length from the TCP/IP stack into which
             the string will be written. */
-            uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
+#if USE_OLD_GET_UDP_BUFFER_API
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY );
+#else
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_IPv46( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
+#endif /* USE_OLD_GET_UDP_BUFFER_API */
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
 
