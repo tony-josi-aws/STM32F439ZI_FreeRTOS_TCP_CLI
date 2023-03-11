@@ -143,27 +143,23 @@ void app_main( void )
 	memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
 
 	/* Initialize the network interface.*/
-	#if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 )
-    {
-		/* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
-		FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
-		FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
-	}
-    #else
-    {
-	    /* Initialize the interface descriptor for WinPCap. */
-		pxFillInterfaceDescriptor(0, &(xInterfaces[0]));
-	    /* === End-point 0 === */
-		FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        /* Initialize the interface descriptor for WinPCap. */
+        pxSTM32Fxx_FillInterfaceDescriptor(0, &(xInterfaces[0]));
+        /* === End-point 0 === */
+        FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
         #if ( ipconfigUSE_DHCP != 0 )
         {
             /* End-point 0 wants to use DHCPv4. */
             xEndPoints[0].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
         }
         #endif /* ( ipconfigUSE_DHCP != 0 ) */
-		FreeRTOS_IPStart();
-	}
-    #endif /* if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 ) */
+        FreeRTOS_IPInit_Multi();
+    #else
+        /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
+        FreeRTOS_debug_printf(("FreeRTOS_IPInit\r\n"));
+        FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+    #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
     /* Task to display network status */
     network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
@@ -514,7 +510,11 @@ static void network_up_status_thread_fn(void *io_params) {
 	}
 }
 
-void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent, struct xNetworkEndPoint* pxEndPoint )
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+	void vApplicationIPNetworkEventHook_Multi( eIPCallbackEvent_t eNetworkEvent, struct xNetworkEndPoint* pxEndPoint )
+#else
+	void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent)
+#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 {
     /* If the network has just come up...*/
     if( eNetworkEvent == eNetworkUp )
@@ -564,7 +564,12 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent, struct xN
 /*-----------------------------------------------------------*/
 
 #if ( ipconfigUSE_LLMNR != 0 ) || ( ipconfigUSE_NBNS != 0 )
-BaseType_t xApplicationDNSQueryHook( struct xNetworkEndPoint * pxEndPoint, const char * pcName )
+
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+	BaseType_t xApplicationDNSQueryHook_Multi( struct xNetworkEndPoint * pxEndPoint, const char * pcName )
+#else
+	BaseType_t xApplicationDNSQueryHook( const char * pcName )
+#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 {
     BaseType_t xReturn = pdFAIL;
 
@@ -577,7 +582,8 @@ BaseType_t xApplicationDNSQueryHook( struct xNetworkEndPoint * pxEndPoint, const
     }
     return xReturn;
 }
-#endif
+
+#endif /* ( ipconfigUSE_LLMNR != 0 ) || ( ipconfigUSE_NBNS != 0 ) */
 
 /*-----------------------------------------------------------*/
 

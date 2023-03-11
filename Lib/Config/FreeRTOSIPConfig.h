@@ -44,6 +44,8 @@ extern "C" {
 
 #define ipconfigUSE_RMII 1
 
+#define ipconfigIPv4_BACKWARD_COMPATIBLE 0
+
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
 #define ipconfigBYTE_ORDER pdFREERTOS_LITTLE_ENDIAN
