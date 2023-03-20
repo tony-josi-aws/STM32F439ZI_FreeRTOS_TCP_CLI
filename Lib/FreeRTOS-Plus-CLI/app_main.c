@@ -202,7 +202,13 @@ static void prvCliTask( void *pvParameters )
                          sizeof( TickType_t ) );
 
     xServerAddress.sin_port = FreeRTOS_htons( configCLI_SERVER_PORT );
-    xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
+
+    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        xServerAddress.sin_address.ulIP_IPv4 = FreeRTOS_GetIPAddress();
+    #else
+        xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
+    #endif
+
     FreeRTOS_bind( xCLIServerSocket, &( xServerAddress ), sizeof( xServerAddress ) );
 
     configPRINTF( ( "Waiting for requests...\n" ) );
@@ -228,13 +234,29 @@ static void prvCliTask( void *pvParameters )
             uint8_t ucPacketNumber = 1;
 #ifdef TIM7_TEST
             extern uint32_t tim7_period;
-            configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
-                                                                             xSourceAddress.sin_port,
-                                                                             &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #endif
+
 #else
-            configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                             xSourceAddress.sin_port,
-                                                                             &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #endif
+
 #endif
             do
             {
@@ -303,9 +325,18 @@ static void prvCliTask( void *pvParameters )
         }
         else
         {
-            configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                                      xSourceAddress.sin_port,
-                                                                                      cInputCommandString ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #else
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #endif
+            
+
         }
     }
 }
