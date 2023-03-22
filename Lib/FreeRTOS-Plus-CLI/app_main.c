@@ -47,7 +47,7 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
-#define USE_OLD_GET_UDP_BUFFER_API			1
+#define USE_OLD_GET_UDP_BUFFER_API			0
 #define USE_ZERO_COPY 						1
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
@@ -88,6 +88,13 @@ static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LE
 
 TaskHandle_t network_up_task_handle;
 BaseType_t network_up_task_create_ret_status, network_up;
+
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+
+	NetworkInterface_t * pxSTM32Fxx_FillInterfaceDescriptor( BaseType_t xEMACIndex,
+                                                         NetworkInterface_t * pxInterface );
+
+#endif
 
 /*-----------------------------------------------------------*/
 
@@ -146,27 +153,23 @@ void app_main( void )
 	memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
 
 	/* Initialize the network interface.*/
-	#if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 )
-    {
-		/* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
-		FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
-		FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
-	}
-    #else
-    {
-	    /* Initialize the interface descriptor for WinPCap. */
-		pxFillInterfaceDescriptor(0, &(xInterfaces[0]));
-	    /* === End-point 0 === */
-		FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        /* Initialize the interface descriptor for WinPCap. */
+        pxSTM32Fxx_FillInterfaceDescriptor(0, &(xInterfaces[0]));
+        /* === End-point 0 === */
+        FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
         #if ( ipconfigUSE_DHCP != 0 )
         {
             /* End-point 0 wants to use DHCPv4. */
             xEndPoints[0].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
         }
         #endif /* ( ipconfigUSE_DHCP != 0 ) */
-		FreeRTOS_IPStart();
-	}
-    #endif /* if ( ipconfigMULTI_INTERFACE == 0 ) || ( ipconfigCOMPATIBLE_WITH_SINGLE == 1 ) */
+        FreeRTOS_IPInit_Multi();
+    #else
+        /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
+        FreeRTOS_debug_printf(("FreeRTOS_IPInit\r\n"));
+        FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+    #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
     /* Task to display network status */
     network_up_task_create_ret_status = xTaskCreate(network_up_status_thread_fn, "network_up_status", 200, "HW from 2", ipconfigIP_TASK_PRIORITY - 1, &network_up_task_handle);
@@ -209,7 +212,13 @@ static void prvCliTask( void *pvParameters )
                          sizeof( TickType_t ) );
 
     xServerAddress.sin_port = FreeRTOS_htons( configCLI_SERVER_PORT );
-    xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
+
+    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        xServerAddress.sin_address.ulIP_IPv4 = FreeRTOS_GetIPAddress();
+    #else
+        xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
+    #endif
+
     FreeRTOS_bind( xCLIServerSocket, &( xServerAddress ), sizeof( xServerAddress ) );
 
     configPRINTF( ( "Waiting for requests...\n" ) );
@@ -255,13 +264,29 @@ static void prvCliTask( void *pvParameters )
             uint8_t ucPacketNumber = 1;
 #ifdef TIM7_TEST
             extern uint32_t tim7_period;
-            configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
-                                                                             xSourceAddress.sin_port,
-                                                                             &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #endif
+
 #else
-            configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                             xSourceAddress.sin_port,
-                                                                             &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #endif
+
 #endif
             do
             {
@@ -330,9 +355,18 @@ static void prvCliTask( void *pvParameters )
         }
         else
         {
-            configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                                      xSourceAddress.sin_port,
-                                                                                      cInputCommandString ) );
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #else
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #endif
+            
+
         }
     }
 }
@@ -424,7 +458,7 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
 #if USE_OLD_GET_UDP_BUFFER_API
         uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
 #else
-        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_ByIPType( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
 #endif /* USE_OLD_GET_UDP_BUFFER_API */
         configASSERT( pucBuffer != NULL );
         memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
@@ -506,7 +540,7 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
 #if USE_OLD_GET_UDP_BUFFER_API
         	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY );
 #else
-        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_ByIPType( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
 #endif /* USE_OLD_GET_UDP_BUFFER_API */
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
@@ -584,7 +618,11 @@ static void network_up_status_thread_fn(void *io_params) {
 	}
 }
 
-void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent, struct xNetworkEndPoint* pxEndPoint )
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+	void vApplicationIPNetworkEventHook_Multi( eIPCallbackEvent_t eNetworkEvent, struct xNetworkEndPoint* pxEndPoint )
+#else
+	void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent)
+#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 {
     /* If the network has just come up...*/
     if( eNetworkEvent == eNetworkUp )
@@ -634,7 +672,12 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent, struct xN
 /*-----------------------------------------------------------*/
 
 #if ( ipconfigUSE_LLMNR != 0 ) || ( ipconfigUSE_NBNS != 0 )
-BaseType_t xApplicationDNSQueryHook( struct xNetworkEndPoint * pxEndPoint, const char * pcName )
+
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+	BaseType_t xApplicationDNSQueryHook_Multi( struct xNetworkEndPoint * pxEndPoint, const char * pcName )
+#else
+	BaseType_t xApplicationDNSQueryHook( const char * pcName )
+#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 {
     BaseType_t xReturn = pdFAIL;
 
@@ -647,7 +690,8 @@ BaseType_t xApplicationDNSQueryHook( struct xNetworkEndPoint * pxEndPoint, const
     }
     return xReturn;
 }
-#endif
+
+#endif /* ( ipconfigUSE_LLMNR != 0 ) || ( ipconfigUSE_NBNS != 0 ) */
 
 /*-----------------------------------------------------------*/
 
