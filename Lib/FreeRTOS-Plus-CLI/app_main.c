@@ -86,6 +86,13 @@ static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LE
 TaskHandle_t network_up_task_handle;
 BaseType_t network_up_task_create_ret_status, network_up;
 
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+
+	NetworkInterface_t * pxSTM32Fxx_FillInterfaceDescriptor( BaseType_t xEMACIndex,
+                                                         NetworkInterface_t * pxInterface );
+
+#endif
+
 /*-----------------------------------------------------------*/
 
 static void prvCliTask( void * pvParameters );
