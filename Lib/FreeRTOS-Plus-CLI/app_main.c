@@ -47,8 +47,11 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
-#define USE_UDP			 		     		1
-#define USE_TCP			 		     		0
+#define USE_UDP			 		     		0 /* ******** TODO ********
+												Both UDP and TCP doesn't
+												work together right
+ 	 	 	 	 	 	 	 	 	 	 	 	now as they both share same buffer. */
+#define USE_TCP			 		     		1
 
 #define USE_OLD_GET_UDP_BUFFER_API			0
 #define USE_ZERO_COPY 						1
@@ -119,6 +122,9 @@ static BaseType_t prvSendCommandResponse_TCP( Socket_t xCLIServerSocket,
                                           const uint8_t * pucResponse,
                                           uint32_t ulResponseLength );
 static void TCP_Server_Task(void *pvParams);
+static BaseType_t prvSendResponseBytes_TCP( Socket_t xCLIServerSocket,
+                                          const uint8_t * pucResponse,
+                                          uint32_t ulResponseLength );
 
 static void prvConfigureMPU( void );
 
@@ -488,121 +494,129 @@ static void TCP_Server_Task(void *pvParams)
 
         /* Since we set the receive timeout to portMAX_DELAY, the
          * above call should only return when a command is received. */
-        configASSERT( xCount > 0 );
-        configASSERT( xCount < configMAX_COMMAND_INPUT_SIZE);
+        //configASSERT( xCount > 0 );
 
-        memcpy(cInputCommandString, pucRxBuffer, xCount);
-        cInputCommandString[ xCount ] = '\0';
-
-        if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
+        if( xCount > 0 )
         {
-            uint8_t ucPacketNumber = 1;
-#ifdef TIM7_TEST
-            extern uint32_t tim7_period;
+            configASSERT( xCount < configMAX_COMMAND_INPUT_SIZE);
 
-            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
-                                                                                xSourceAddress.sin_port,
-                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
-            #else
-                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
-                                                                                xSourceAddress.sin_port,
-                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
-            #endif
+            memcpy(cInputCommandString, pucRxBuffer, xCount);
+            cInputCommandString[ xCount ] = '\0';
+
+            //prvSendResponseBytes_TCP(xCLIServerSocket, cInputCommandString, xCount + 1);
+
+#if 1
+            if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
+            {
+                uint8_t ucPacketNumber = 1;
+#ifdef TIM7_TEST
+                extern uint32_t tim7_period;
+
+                #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                    configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                    xSourceAddress.sin_port,
+                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                #else
+                    configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
+                                                                                    xSourceAddress.sin_port,
+                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                #endif
 
 #else
 
-            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
-                                                                                xSourceAddress.sin_port,
-                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
-            #else
-                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                                xSourceAddress.sin_port,
-                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
-            #endif
+                #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                    configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                    xSourceAddress.sin_port,
+                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                #else
+                    configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                    xSourceAddress.sin_port,
+                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                #endif
 
 #endif
-            do
+                do
+                {
+                    /* Send the received command to the FreeRTOS+CLI. */
+                    xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString[ PACKET_HEADER_LENGTH ] ),
+                                                                        pcOutputBuffer,
+                                                                        configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 );
+
+                    /* Ensure null termination so that the strlen below does not
+                    * end up reading past bounds. */
+                    pcOutputBuffer[ configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 ] = '\0';
+
+                    ulResponseLength = strlen( pcOutputBuffer );
+
+                    /* HACK - Check if the output buffer contains one of our special
+                    * markers indicating the need of a special response and process
+                    * accordingly. */
+                    if( strncmp( pcOutputBuffer, "PCAP-GET", ulResponseLength ) == 0 )
+                    {
+                        const uint8_t * pucPcapData;
+                        uint32_t ulPcapDataLength;
+
+                        pcap_capture_get_captured_data( &( pucPcapData ),
+                                                        &( ulPcapDataLength) );
+
+                        xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
+                                                                &( xSourceAddress ),
+                                                                xSourceAddressLength,
+                                                                &( ucPacketNumber ),
+                                                                &( ucRequestId [ 0 ] ),
+                                                                pucPcapData,
+                                                                ulPcapDataLength );
+
+                        /* Next fetch should not get the same capture but the capture
+                        * after this point. */
+                        pcap_capture_reset();
+                    }
+                    else
+                    {
+                        /* Send the command response. */
+                        xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
+                                                                &( xSourceAddress ),
+                                                                xSourceAddressLength,
+                                                                &( ucPacketNumber ),
+                                                                &( ucRequestId [ 0 ] ),
+                                                                ( const uint8_t * ) pcOutputBuffer,
+                                                                ulResponseLength );
+                    }
+
+                    if( xResponseSent == pdPASS )
+                    {
+                        configPRINTF( ( "Response sent successfully. \n" ) );
+                    }
+                    else
+                    {
+                        configPRINTF( ( "[ERROR] Failed to send response. \n" ) );
+                    }
+                } while( xResponseRemaining == pdTRUE );
+
+                /* Send the last packet with zero payload length. */
+                ( void ) prvSendResponseEndMarker_TCP( xCLIServerSocket,
+                                                &( xSourceAddress ),
+                                                xSourceAddressLength,
+                                                &( ucPacketNumber ),
+                                                &( ucRequestId [ 0 ] ) );
+            }
+            else
             {
-                /* Send the received command to the FreeRTOS+CLI. */
-                xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString[ PACKET_HEADER_LENGTH ] ),
-                                                                    pcOutputBuffer,
-                                                                    configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 );
 
-                /* Ensure null termination so that the strlen below does not
-                * end up reading past bounds. */
-                pcOutputBuffer[ configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 ] = '\0';
+                #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                    configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                            xSourceAddress.sin_port,
+                                                                                            cInputCommandString ) );
+                #else
+                    configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                            xSourceAddress.sin_port,
+                                                                                            cInputCommandString ) );
+                #endif
+                
 
-                ulResponseLength = strlen( pcOutputBuffer );
-
-                /* HACK - Check if the output buffer contains one of our special
-                * markers indicating the need of a special response and process
-                * accordingly. */
-                if( strncmp( pcOutputBuffer, "PCAP-GET", ulResponseLength ) == 0 )
-                {
-                    const uint8_t * pucPcapData;
-                    uint32_t ulPcapDataLength;
-
-                    pcap_capture_get_captured_data( &( pucPcapData ),
-                                                    &( ulPcapDataLength) );
-
-                    xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
-                                                            &( xSourceAddress ),
-                                                            xSourceAddressLength,
-                                                            &( ucPacketNumber ),
-                                                            &( ucRequestId [ 0 ] ),
-                                                            pucPcapData,
-                                                            ulPcapDataLength );
-
-                    /* Next fetch should not get the same capture but the capture
-                    * after this point. */
-                    pcap_capture_reset();
-                }
-                else
-                {
-                    /* Send the command response. */
-                    xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
-                                                            &( xSourceAddress ),
-                                                            xSourceAddressLength,
-                                                            &( ucPacketNumber ),
-                                                            &( ucRequestId [ 0 ] ),
-                                                            ( const uint8_t * ) pcOutputBuffer,
-                                                            ulResponseLength );
-                }
-
-                if( xResponseSent == pdPASS )
-                {
-                    configPRINTF( ( "Response sent successfully. \n" ) );
-                }
-                else
-                {
-                    configPRINTF( ( "[ERROR] Failed to send response. \n" ) );
-                }
-            } while( xResponseRemaining == pdTRUE );
-
-            /* Send the last packet with zero payload length. */
-            ( void ) prvSendResponseEndMarker_TCP( xCLIServerSocket,
-                                               &( xSourceAddress ),
-                                               xSourceAddressLength,
-                                               &( ucPacketNumber ),
-                                               &( ucRequestId [ 0 ] ) );
+            }
         }
-        else
-        {
-
-            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
-                                                                                        xSourceAddress.sin_port,
-                                                                                        cInputCommandString ) );
-            #else
-                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
-                                                                                        xSourceAddress.sin_port,
-                                                                                        cInputCommandString ) );
-            #endif
-            
-
-        }
+#endif
     }
 }
 
@@ -753,7 +767,7 @@ static BaseType_t prvSendResponseEndMarker_TCP( Socket_t xCLIServerSocket,
         /* Call send() until all the data has been sent. */
         while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
         {
-            lSent = FreeRTOS_send( xCLIServerSocket, ucUdpResponseBuffer, lBytes - lTotalSent, 0 );
+            lSent = FreeRTOS_send( xCLIServerSocket, ( void * ) ( &header ), lBytes - lTotalSent, 0 );
             lTotalSent += lSent;
         }
 
@@ -935,10 +949,38 @@ static BaseType_t prvSendCommandResponse_TCP( Socket_t xCLIServerSocket,
             break;
         }
 
-        ulRemainingBytes -= lTotalSent;
+        ulRemainingBytes -= (lTotalSent - PACKET_HEADER_LENGTH);
     }
 
     return ret;
+}
+
+static BaseType_t prvSendResponseBytes_TCP( Socket_t xCLIServerSocket,
+                                          const uint8_t * pucResponse,
+                                          uint32_t ulResponseLength )
+{
+    BaseType_t ret = pdPASS;
+    int32_t lBytes, lSent, lTotalSent;
+
+    lBytes = ulResponseLength;
+    lSent = 0;
+    lTotalSent = 0;
+
+    /* Call send() until all the data has been sent. */
+    while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+    {
+        lSent = FreeRTOS_send( xCLIServerSocket, pucResponse, lBytes - lTotalSent, 0 );
+        lTotalSent += lSent;
+    }
+
+    if( lSent < 0 )
+    {
+        /* Socket closed? */
+        ret = pdFAIL;
+    }
+    
+    return ret;
+
 }
 /*-----------------------------------------------------------*/
 
