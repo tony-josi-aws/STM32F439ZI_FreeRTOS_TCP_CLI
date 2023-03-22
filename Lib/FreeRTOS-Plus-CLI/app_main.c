@@ -47,8 +47,13 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
+#define USE_UDP			 		     		1
+#define USE_TCP			 		     		0
+
 #define USE_OLD_GET_UDP_BUFFER_API			0
 #define USE_ZERO_COPY 						1
+#define USE_TCP_ZERO_COPY 		     		0
+
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
 #define mainLOGGING_TASK_PRIORITY           tskIDLE_PRIORITY
@@ -99,6 +104,21 @@ BaseType_t network_up_task_create_ret_status, network_up;
 /*-----------------------------------------------------------*/
 
 static void prvCliTask( void * pvParameters );
+
+static void prvCliTask_TCP( void *pvParameters );
+static BaseType_t prvSendResponseEndMarker_TCP( Socket_t xCLIServerSocket,
+                                            struct freertos_sockaddr * pxSourceAddress,
+                                            socklen_t xSourceAddressLength,
+                                            uint8_t *pucPacketNumber,
+                                            uint8_t *pucRequestId );
+static BaseType_t prvSendCommandResponse_TCP( Socket_t xCLIServerSocket,
+                                          struct freertos_sockaddr * pxSourceAddress,
+                                          socklen_t xSourceAddressLength,
+                                          uint8_t *pucPacketNumber,
+                                          uint8_t *pucRequestId,
+                                          const uint8_t * pucResponse,
+                                          uint32_t ulResponseLength );
+static void TCP_Server_Task(void *pvParams);
 
 static void prvConfigureMPU( void );
 
@@ -370,6 +390,222 @@ static void prvCliTask( void *pvParameters )
         }
     }
 }
+
+static void prvCliTask_TCP( void *pvParameters )
+{
+    uint32_t ulResponseLength;
+    struct freertos_sockaddr xClient, xBindAddress;
+    socklen_t xSize = sizeof( xClient );
+    BaseType_t xCount, xResponseRemaining, xResponseSent;
+    Socket_t xListeningSocket = FREERTOS_INVALID_SOCKET, xConnectedSocket = FREERTOS_INVALID_SOCKET;
+    struct freertos_sockaddr xSourceAddress, xServerAddress;
+    socklen_t xSourceAddressLength = sizeof( xSourceAddress );
+    TickType_t xCLIServerRecvTimeout = portMAX_DELAY;
+    static const TickType_t xCLIServerSendTimeout = pdMS_TO_TICKS( 4000 );
+    char * pcOutputBuffer = FreeRTOS_CLIGetOutputBuffer();
+    const BaseType_t xBacklog = 20;
+
+    ( void ) pvParameters;
+
+    xListeningSocket = FreeRTOS_socket( FREERTOS_AF_INET,
+                                        FREERTOS_SOCK_STREAM,
+                                        FREERTOS_IPPROTO_TCP );
+    configASSERT( xListeningSocket != FREERTOS_INVALID_SOCKET );
+
+    /* No need to return from FreeRTOS_recvfrom until a message
+     * is received. */
+    FreeRTOS_setsockopt( xListeningSocket,
+                         0,
+                         FREERTOS_SO_RCVTIMEO,
+                         &( xCLIServerRecvTimeout ),
+                         sizeof( TickType_t ) );
+
+    xServerAddress.sin_port = FreeRTOS_htons( configCLI_SERVER_PORT );
+
+    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        xServerAddress.sin_address.ulIP_IPv4 = FreeRTOS_GetIPAddress();
+    #else
+        xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
+    #endif
+
+    FreeRTOS_bind( xListeningSocket, &( xServerAddress ), sizeof( xServerAddress ) );
+
+    /* start listening */
+    FreeRTOS_listen( xListeningSocket, xBacklog );
+
+	for( ;; )
+	{
+		/* Wait for a client to connect. */
+		xConnectedSocket = FreeRTOS_accept( xListeningSocket, &xClient, &xSize );
+		configASSERT( xConnectedSocket != FREERTOS_INVALID_SOCKET );
+
+		/* Spawn a task to handle the connection. */
+		xTaskCreate( TCP_Server_Task, "CLI TCP Server Instance", mainCLI_TASK_STACK_SIZE, ( void * ) xConnectedSocket, mainCLI_TASK_PRIORITY, NULL );
+	}
+
+}
+
+static void TCP_Server_Task(void *pvParams)
+{
+
+    uint32_t ulResponseLength;
+    BaseType_t xCount, xResponseRemaining, xResponseSent;
+    Socket_t xCLIServerSocket = (Socket_t) pvParams;
+    struct freertos_sockaddr xSourceAddress, xServerAddress;
+    socklen_t xSourceAddressLength = sizeof( xSourceAddress );
+    char * pcOutputBuffer = FreeRTOS_CLIGetOutputBuffer();
+    const BaseType_t xBacklog = 20;
+    static const TickType_t xReceiveTimeOut = pdMS_TO_TICKS( 5000 );
+    static const TickType_t xSendTimeOut = pdMS_TO_TICKS( 5000 );
+    uint8_t *pucRxBuffer = NULL;
+
+	/* Attempt to create the buffer used to receive the string to be echoed
+	back.  This could be avoided using a zero copy interface that just returned
+	the same buffer. */
+	pucRxBuffer = ( uint8_t * ) pvPortMalloc( ipconfigTCP_MSS );
+    configASSERT(pucRxBuffer != NULL);
+
+    FreeRTOS_setsockopt( xCLIServerSocket, 0, FREERTOS_SO_RCVTIMEO, &xReceiveTimeOut, sizeof( xReceiveTimeOut ) );
+    FreeRTOS_setsockopt( xCLIServerSocket, 0, FREERTOS_SO_SNDTIMEO, &xSendTimeOut, sizeof( xReceiveTimeOut ) );
+    
+    for( ;; )
+    {
+
+        /* Zero out the receive array so there is NULL at the end of the string
+        when it is printed out. */
+        memset( pucRxBuffer, 0x00, ipconfigTCP_MSS );
+
+        uint8_t ucRequestId[ 4 ];
+
+#if USE_TCP_ZERO_COPY
+
+
+#else
+
+            xCount = FreeRTOS_recv( xCLIServerSocket, pucRxBuffer, ipconfigTCP_MSS, 0 );
+
+#endif /* USE_TCP_ZERO_COPY */
+
+        /* Since we set the receive timeout to portMAX_DELAY, the
+         * above call should only return when a command is received. */
+        configASSERT( xCount > 0 );
+        configASSERT( xCount < configMAX_COMMAND_INPUT_SIZE);
+
+        memcpy(cInputCommandString, pucRxBuffer, xCount);
+        cInputCommandString[ xCount ] = '\0';
+
+        if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
+        {
+            uint8_t ucPacketNumber = 1;
+#ifdef TIM7_TEST
+            extern uint32_t tim7_period;
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+            #endif
+
+#else
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #else
+                configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                xSourceAddress.sin_port,
+                                                                                &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+            #endif
+
+#endif
+            do
+            {
+                /* Send the received command to the FreeRTOS+CLI. */
+                xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString[ PACKET_HEADER_LENGTH ] ),
+                                                                    pcOutputBuffer,
+                                                                    configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 );
+
+                /* Ensure null termination so that the strlen below does not
+                * end up reading past bounds. */
+                pcOutputBuffer[ configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 ] = '\0';
+
+                ulResponseLength = strlen( pcOutputBuffer );
+
+                /* HACK - Check if the output buffer contains one of our special
+                * markers indicating the need of a special response and process
+                * accordingly. */
+                if( strncmp( pcOutputBuffer, "PCAP-GET", ulResponseLength ) == 0 )
+                {
+                    const uint8_t * pucPcapData;
+                    uint32_t ulPcapDataLength;
+
+                    pcap_capture_get_captured_data( &( pucPcapData ),
+                                                    &( ulPcapDataLength) );
+
+                    xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
+                                                            &( xSourceAddress ),
+                                                            xSourceAddressLength,
+                                                            &( ucPacketNumber ),
+                                                            &( ucRequestId [ 0 ] ),
+                                                            pucPcapData,
+                                                            ulPcapDataLength );
+
+                    /* Next fetch should not get the same capture but the capture
+                    * after this point. */
+                    pcap_capture_reset();
+                }
+                else
+                {
+                    /* Send the command response. */
+                    xResponseSent = prvSendCommandResponse_TCP( xCLIServerSocket,
+                                                            &( xSourceAddress ),
+                                                            xSourceAddressLength,
+                                                            &( ucPacketNumber ),
+                                                            &( ucRequestId [ 0 ] ),
+                                                            ( const uint8_t * ) pcOutputBuffer,
+                                                            ulResponseLength );
+                }
+
+                if( xResponseSent == pdPASS )
+                {
+                    configPRINTF( ( "Response sent successfully. \n" ) );
+                }
+                else
+                {
+                    configPRINTF( ( "[ERROR] Failed to send response. \n" ) );
+                }
+            } while( xResponseRemaining == pdTRUE );
+
+            /* Send the last packet with zero payload length. */
+            ( void ) prvSendResponseEndMarker_TCP( xCLIServerSocket,
+                                               &( xSourceAddress ),
+                                               xSourceAddressLength,
+                                               &( ucPacketNumber ),
+                                               &( ucRequestId [ 0 ] ) );
+        }
+        else
+        {
+
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #else
+                configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
+                                                                                        xSourceAddress.sin_port,
+                                                                                        cInputCommandString ) );
+            #endif
+            
+
+        }
+    }
+}
+
 /*-----------------------------------------------------------*/
 
 static void prvRegisterCLICommands( void )
@@ -488,6 +724,55 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
 
     return ret;
 }
+
+static BaseType_t prvSendResponseEndMarker_TCP( Socket_t xCLIServerSocket,
+                                            struct freertos_sockaddr * pxSourceAddress,
+                                            socklen_t xSourceAddressLength,
+                                            uint8_t *pucPacketNumber,
+                                            uint8_t *pucRequestId )
+{
+    BaseType_t ret = pdPASS;
+    int32_t lBytes, lSent, lTotalSent;
+    PacketHeader_t header;
+
+    header.ucStartMarker = PACKET_START_MARKER;
+    header.ucPacketNumber = *pucPacketNumber;
+    header.usPayloadLength = 0U;
+    memcpy( &( header.ucRequestId[ 0 ] ), pucRequestId, 4 );
+
+#if USE_TCP_ZERO_COPY
+
+#else
+
+        /* Send response. */
+
+        lBytes = sizeof( PacketHeader_t );
+        lSent = 0;
+        lTotalSent = 0;
+
+        /* Call send() until all the data has been sent. */
+        while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+        {
+            lSent = FreeRTOS_send( xCLIServerSocket, ucUdpResponseBuffer, lBytes - lTotalSent, 0 );
+            lTotalSent += lSent;
+        }
+
+        if( lSent < 0 )
+        {
+            /* Socket closed? */
+        	ret = pdFAIL;
+        }
+
+#endif /* USE_ZERO_COPY */
+
+    if( lTotalSent != PACKET_HEADER_LENGTH )
+    {
+        configPRINTF( ("[ERROR] Failed to last response header.\n" ) );
+        ret = pdFAIL;
+    }
+
+    return ret;
+}
 /*-----------------------------------------------------------*/
 
 static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
@@ -577,6 +862,84 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
 
     return ret;
 }
+
+static BaseType_t prvSendCommandResponse_TCP( Socket_t xCLIServerSocket,
+                                          struct freertos_sockaddr * pxSourceAddress,
+                                          socklen_t xSourceAddressLength,
+                                          uint8_t *pucPacketNumber,
+                                          uint8_t *pucRequestId,
+                                          const uint8_t * pucResponse,
+                                          uint32_t ulResponseLength )
+{
+    BaseType_t ret = pdPASS;
+    PacketHeader_t header;
+    int32_t lBytesSent;
+    uint32_t ulBytesToSend, ulRemainingBytes, ulBytesSent;
+    int32_t lBytes, lSent, lTotalSent;
+
+    ulRemainingBytes = ulResponseLength;
+    ulBytesSent = 0;
+
+    while( ulRemainingBytes > 0 )
+    {
+        ulBytesToSend = ulRemainingBytes;
+
+
+        /* Write header to the response buffer. */
+        header.ucStartMarker = PACKET_START_MARKER;
+        header.ucPacketNumber = *pucPacketNumber;
+        *pucPacketNumber = ( *pucPacketNumber ) + 1;
+        header.usPayloadLength = FreeRTOS_htons( ( uint16_t ) ulBytesToSend );
+        memcpy( &( header.ucRequestId[ 0 ] ), pucRequestId, 4 );
+
+        memcpy( &( ucUdpResponseBuffer[ 0 ] ),
+                &( header ),
+                PACKET_HEADER_LENGTH );
+
+        /* Write actual response to the buffer. */
+        memcpy( &( ucUdpResponseBuffer[ PACKET_HEADER_LENGTH] ),
+                &( pucResponse[ ulBytesSent ] ),
+                ulBytesToSend );
+
+
+
+#if USE_TCP_ZERO_COPY
+
+#else
+
+            /* Send response. */
+
+            lBytes = ulBytesToSend + PACKET_HEADER_LENGTH;
+            lSent = 0;
+            lTotalSent = 0;
+
+            /* Call send() until all the data has been sent. */
+            while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+            {
+                lSent = FreeRTOS_send( xCLIServerSocket, ucUdpResponseBuffer, lBytes - lTotalSent, 0 );
+                lTotalSent += lSent;
+            }
+
+            if( lSent < 0 )
+            {
+                /* Socket closed? */
+                break;
+            }
+
+#endif /* USE_ZERO_COPY */
+
+        if( lSent != ( ulBytesToSend + PACKET_HEADER_LENGTH ) )
+        {
+            configPRINTF( ("[ERROR] Failed to send response.\n" ) );
+            ret = pdFAIL;
+            break;
+        }
+
+        ulRemainingBytes -= lTotalSent;
+    }
+
+    return ret;
+}
 /*-----------------------------------------------------------*/
 
 uint32_t ulApplicationGetNextSequenceNumber( uint32_t ulSourceAddress,
@@ -636,6 +999,7 @@ static void network_up_status_thread_fn(void *io_params) {
         {
             xTasksAlreadyCreated = pdTRUE;
 
+#if USE_UDP
             /* Sockets, and tasks that use the TCP/IP stack can be created here. */
             xTaskCreate( prvCliTask,
                          "cli",
@@ -643,6 +1007,19 @@ static void network_up_status_thread_fn(void *io_params) {
                          NULL,
                          mainCLI_TASK_PRIORITY,
                          NULL );
+#endif
+
+#if USE_TCP
+
+            /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+            xTaskCreate( prvCliTask_TCP,
+                         "cli",
+                         mainCLI_TASK_STACK_SIZE,
+                         NULL,
+                         mainCLI_TASK_PRIORITY,
+                         NULL );
+#endif
+
         }
 
         /* Print out the network configuration, which may have come from a DHCP
