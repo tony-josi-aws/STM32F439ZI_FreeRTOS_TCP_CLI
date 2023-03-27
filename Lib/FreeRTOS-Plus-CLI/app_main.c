@@ -42,6 +42,7 @@
 /* Pcap capture includes. */
 #include "pcap_capture.h"
 
+#include "iperf_task.h"
 
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
@@ -51,7 +52,9 @@
 												Both UDP and TCP doesn't
 												work together right
  	 	 	 	 	 	 	 	 	 	 	 	now as they both share same buffer. */
-#define USE_TCP			 		     		1
+#define USE_TCP			 		     		0
+
+#define USE_IPERF3                          1
 
 #define USE_OLD_GET_UDP_BUFFER_API			0
 #define USE_ZERO_COPY 						1
@@ -1074,6 +1077,12 @@ static void network_up_status_thread_fn(void *io_params) {
                          NULL,
                          mainCLI_TASK_PRIORITY,
                          NULL );
+#endif
+
+#if USE_IPERF3
+
+            vIPerfInstall();
+
 #endif
 
         }
