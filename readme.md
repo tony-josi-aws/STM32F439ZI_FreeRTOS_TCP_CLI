@@ -9,3 +9,51 @@ The Ethernet interface is completely decoupled from the auto generated code prov
 The hardware initialization part of the Ethernet is done in the `HAL_ETH_MspInit` and `HAL_ETH_MspDeInit` functions of the app_main.c which are copied versions of the CubeIDE generated code. These functions are called internally by the FreeRTOS + TCP/IP NetworkInterface layer during init.
 
 
+## `iperf3` bandwidth test results:
+
+``` sh
+C:\Users\tonyjosi\Downloads\iperf-3.1.3-win64\iperf-3.1.3-win64>iperf3.exe -c 10.218.244.87 --port 5001 --bytes 100M    
+Connecting to host 10.218.244.87, port 5001                                                                             
+[  4] local 10.218.244.90 port 16395 connected to 10.218.244.87 port 5001                                               
+[ ID] Interval           Transfer     Bandwidth                                                                         
+[  4]   0.00-1.01   sec  3.00 MBytes  24.9 Mbits/sec                                                                    
+[  4]   1.01-2.00   sec  3.00 MBytes  25.4 Mbits/sec                                                                    
+[  4]   2.00-3.00   sec  3.12 MBytes  26.2 Mbits/sec                                                                    
+[  4]   3.00-4.01   sec  3.00 MBytes  25.1 Mbits/sec                                                                    
+[  4]   4.01-5.00   sec  3.00 MBytes  25.2 Mbits/sec                                                                    
+[  4]   5.00-6.01   sec  3.12 MBytes  26.0 Mbits/sec                                                                    
+[  4]   6.01-7.00   sec  3.00 MBytes  25.4 Mbits/sec                                                                    
+[  4]   7.00-8.00   sec  3.12 MBytes  26.2 Mbits/sec                                                                    
+[  4]   8.00-9.00   sec  3.00 MBytes  25.1 Mbits/sec                                                                    
+[  4]   9.00-10.01  sec  3.00 MBytes  25.0 Mbits/sec                                                                    
+[  4]  10.01-11.01  sec  3.00 MBytes  25.3 Mbits/sec                                                                    
+[  4]  11.01-12.01  sec  3.12 MBytes  26.0 Mbits/sec                                                                    
+[  4]  12.01-13.00  sec  3.00 MBytes  25.5 Mbits/sec                                                                    
+[  4]  13.00-14.01  sec  3.12 MBytes  26.1 Mbits/sec                                                                    
+[  4]  14.01-15.00  sec  3.00 MBytes  25.2 Mbits/sec                                                                    
+[  4]  15.00-16.01  sec  3.00 MBytes  25.0 Mbits/sec                                                                    
+[  4]  16.01-17.00  sec  3.00 MBytes  25.4 Mbits/sec                                                                    
+[  4]  17.00-18.01  sec  3.12 MBytes  25.9 Mbits/sec                                                                    
+[  4]  18.01-19.01  sec  3.00 MBytes  25.3 Mbits/sec                                                                    
+[  4]  19.01-20.00  sec  3.12 MBytes  26.3 Mbits/sec                                                                    
+[  4]  20.00-21.00  sec  3.00 MBytes  25.2 Mbits/sec                                                                    
+[  4]  21.00-22.01  sec  3.00 MBytes  24.9 Mbits/sec                                                                    
+[  4]  22.01-23.01  sec  3.12 MBytes  26.2 Mbits/sec                                                                    
+[  4]  23.01-24.01  sec  3.00 MBytes  25.2 Mbits/sec                                                                    
+[  4]  24.01-25.01  sec  3.00 MBytes  25.3 Mbits/sec                                                                    
+[  4]  25.01-26.01  sec  3.12 MBytes  26.1 Mbits/sec                                                                    
+[  4]  26.01-27.01  sec  3.00 MBytes  25.2 Mbits/sec                                                                    
+[  4]  27.01-28.01  sec  3.12 MBytes  26.2 Mbits/sec                                                                    
+[  4]  28.01-29.01  sec  3.00 MBytes  24.9 Mbits/sec                                                                    
+[  4]  29.01-30.00  sec  3.12 MBytes  26.6 Mbits/sec                                                                    
+[  4]  30.00-31.01  sec  3.00 MBytes  25.0 Mbits/sec                                                                    
+[  4]  31.01-32.00  sec  3.00 MBytes  25.3 Mbits/sec                                                                    
+[  4]  32.00-32.83  sec  2.62 MBytes  26.7 Mbits/sec                                                                    
+- - - - - - - - - - - - - - - - - - - - - - - - -                                                                       
+[ ID] Interval           Transfer     Bandwidth                                                                         
+[  4]   0.00-32.83  sec   100 MBytes  25.6 Mbits/sec                  sender                                            
+[  4]   0.00-32.83  sec  99.8 MBytes  25.5 Mbits/sec                  receiver          
+
+iperf Done.
+
+```
