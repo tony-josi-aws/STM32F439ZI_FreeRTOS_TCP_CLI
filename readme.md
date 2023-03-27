@@ -1,6 +1,6 @@
 # FreeRTOS Kernel + TCP/IP Stack CLI 
 
-This project is a demo integration of the FreeRTOS Kernel and the FreeRTOS + TCP/IP (IPv4 for now) stack with FreeRTOS CLI over UDP on the STM32F439ZI NUCLEO board.
+This project is a demo integration of the FreeRTOS Kernel and the FreeRTOS + TCP/IP (IPv4 for now) stack with FreeRTOS CLI over UDP/TCP on the STM32F439ZI NUCLEO board.
 
 ## Using CubeMX or .ioc file in the project
 
