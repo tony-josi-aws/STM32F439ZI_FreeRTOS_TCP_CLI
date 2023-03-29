@@ -351,7 +351,7 @@ messages. */
 
 #define USE_IPERF                                       1
 
-#define ipconfigIPERF_DOES_ECHO_UDP                     0
+#define ipconfigIPERF_DOES_ECHO_UDP                     1
 
 #define ipconfigIPERF_VERSION                           3
 #define ipconfigIPERF_STACK_SIZE_IPERF_TASK             680
