@@ -712,11 +712,11 @@ static BaseType_t prvSendResponseEndMarker( Socket_t xCLIServerSocket,
         /*
         * First obtain a buffer of adequate length from the TCP/IP stack into which
         the string will be written. */
-#if USE_OLD_GET_UDP_BUFFER_API
-        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
-#else
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
-#endif /* USE_OLD_GET_UDP_BUFFER_API */
+#else
+        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
+#endif
         configASSERT( pucBuffer != NULL );
         memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
 
@@ -848,11 +848,11 @@ static BaseType_t prvSendCommandResponse( Socket_t xCLIServerSocket,
             /*
             * First obtain a buffer of adequate length from the TCP/IP stack into which
             the string will be written. */
-#if USE_OLD_GET_UDP_BUFFER_API
-        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY );
-#else
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY, ipTYPE_IPv4 );
-#endif /* USE_OLD_GET_UDP_BUFFER_API */
+#else
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( ulBytesToSend + PACKET_HEADER_LENGTH, portMAX_DELAY );
+#endif
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
 
@@ -1089,7 +1089,11 @@ static void network_up_status_thread_fn(void *io_params) {
 
         /* Print out the network configuration, which may have come from a DHCP
          * server. */
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         FreeRTOS_GetEndPointConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress, pxNetworkEndPoints );
+#else
+        FreeRTOS_GetAddressConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress );
+#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
         FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
         configPRINTF( ( "IP Address: %s\n", cBuffer ) );
 
