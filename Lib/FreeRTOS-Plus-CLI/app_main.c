@@ -48,7 +48,7 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
-#define USE_UDP			 		     		0 /* ******** TODO ********
+#define USE_UDP			 		     		1 /* ******** TODO ********
 												Both UDP and TCP doesn't
 												work together right
  	 	 	 	 	 	 	 	 	 	 	 	now as they both share same buffer. */
@@ -95,8 +95,6 @@ extern RNG_HandleTypeDef hrng;
 
 static char cInputCommandString[ configMAX_COMMAND_INPUT_SIZE + 1 ];
 
-static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LENGTH ];
-
 TaskHandle_t network_up_task_handle;
 BaseType_t network_up_task_create_ret_status, network_up;
 
@@ -114,6 +112,8 @@ BaseType_t network_up_task_create_ret_status, network_up;
 #if USE_TCP
 
     #define TCP_ECHO_RECV_DATA 0
+
+    static uint8_t ucTcpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LENGTH ];
 
     static void prvCliTask_TCP( void *pvParameters );
     static BaseType_t prvSendResponseEndMarker_TCP( Socket_t xCLIServerSocket,
@@ -141,6 +141,8 @@ BaseType_t network_up_task_create_ret_status, network_up;
 
 
 #if USE_UDP
+
+    static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LENGTH ];
 
     static void prvCliTask( void * pvParameters );
 
@@ -938,12 +940,12 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
             header.usPayloadLength = FreeRTOS_htons( ( uint16_t ) ulBytesToSend );
             memcpy( &( header.ucRequestId[ 0 ] ), pucRequestId, 4 );
 
-            memcpy( &( ucUdpResponseBuffer[ 0 ] ),
+            memcpy( &( ucTcpResponseBuffer[ 0 ] ),
                     &( header ),
                     PACKET_HEADER_LENGTH );
 
             /* Write actual response to the buffer. */
-            memcpy( &( ucUdpResponseBuffer[ PACKET_HEADER_LENGTH] ),
+            memcpy( &( ucTcpResponseBuffer[ PACKET_HEADER_LENGTH] ),
                     &( pucResponse[ ulBytesSent ] ),
                     ulBytesToSend );
 
@@ -962,7 +964,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
                 /* Call send() until all the data has been sent. */
                 while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
                 {
-                    lSent = FreeRTOS_send( xCLIServerSocket, ucUdpResponseBuffer, lBytes - lTotalSent, 0 );
+                    lSent = FreeRTOS_send( xCLIServerSocket, ucTcpResponseBuffer, lBytes - lTotalSent, 0 );
                     lTotalSent += lSent;
                 }
 
