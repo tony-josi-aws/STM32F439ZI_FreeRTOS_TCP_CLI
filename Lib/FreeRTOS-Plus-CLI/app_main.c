@@ -142,6 +142,12 @@ BaseType_t network_up_task_create_ret_status, network_up;
 
 #if USE_UDP
 
+    #if USE_TCP
+        #define configCLI_SERVER_PORT_UDP 1235
+    #else
+        #define configCLI_SERVER_PORT_UDP configCLI_SERVER_PORT
+    #endif /* USE_TCP */
+
     static uint8_t ucUdpResponseBuffer[ mainMAX_UDP_RESPONSE_SIZE + PACKET_HEADER_LENGTH ];
 
     static void prvCliTask( void * pvParameters );
@@ -261,7 +267,7 @@ void app_main( void )
                             &( xCLIServerRecvTimeout ),
                             sizeof( TickType_t ) );
 
-        xServerAddress.sin_port = FreeRTOS_htons( configCLI_SERVER_PORT );
+        xServerAddress.sin_port = FreeRTOS_htons( configCLI_SERVER_PORT_UDP );
 
         #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
             xServerAddress.sin_address.ulIP_IPv4 = FreeRTOS_GetIPAddress();
