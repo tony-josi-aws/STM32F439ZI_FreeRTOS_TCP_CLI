@@ -48,15 +48,23 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
+/*-----------------------------------------------------------*/
+/*-------------  ***  DEMO DEFINES   ***   ------------------*/
+/*-----------------------------------------------------------*/
+
 #define USE_UDP			 		     		1
 
 #define USE_TCP			 		     		1
 
 #define USE_IPERF3                          0
 
-#define USE_OLD_GET_UDP_BUFFER_API			0
 #define USE_ZERO_COPY 						1
+
 #define USE_TCP_ZERO_COPY 		     		0
+
+/*-----------------------------------------------------------*/
+/*-----------------------------------------------------------*/
+/*-----------------------------------------------------------*/
 
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
