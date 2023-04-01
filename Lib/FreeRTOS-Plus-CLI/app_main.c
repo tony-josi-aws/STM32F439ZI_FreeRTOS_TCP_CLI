@@ -48,10 +48,8 @@
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
 
-#define USE_UDP			 		     		1 /* ******** TODO ********
-												Both UDP and TCP doesn't
-												work together right
- 	 	 	 	 	 	 	 	 	 	 	 	now as they both share same buffer. */
+#define USE_UDP			 		     		1
+
 #define USE_TCP			 		     		1
 
 #define USE_IPERF3                          0
