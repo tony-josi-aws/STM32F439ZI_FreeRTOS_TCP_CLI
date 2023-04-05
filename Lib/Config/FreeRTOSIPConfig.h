@@ -44,6 +44,7 @@ extern "C" {
 
 #define ipconfigUSE_RMII 1
 
+#define BUILD_IPERF3	 0
 
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
@@ -224,7 +225,7 @@ aborted. */
 #define ipconfigTCP_TIME_TO_LIVE                        128 /* also defined in FreeRTOSIPConfigDefaults.h */
 
 /* USE_TCP: Use TCP and all its features */
-#define ipconfigUSE_TCP                                 ( 1 )
+#define ipconfigUSE_TCP                                 ( 0 )
 
 /* USE_WIN: Let TCP use windowing mechanism. */
 #define ipconfigUSE_TCP_WIN                             ( 1 )
@@ -366,7 +367,11 @@ messages. */
 #define ipconfigIPERF_RECV_BUFFER_SIZE                  ( 12 * ipconfigTCP_MSS )
 #endif
 
-#define ipconfigETHERNET_MINIMUM_PACKET_BYTES           ( 60 )
+#if ipconfigUSE_TCP == 1
+    #define ipconfigETHERNET_MINIMUM_PACKET_BYTES           ( 60 )
+#else
+    #define ipconfigETHERNET_MINIMUM_PACKET_BYTES           ( 42 ) /* sizeof( ARPPacket_t ) */
+#endif /* ipconfigUSE_TCP == 1 */
 
 #define ipconfigENDPOINT_DNS_ADDRESS_COUNT              ( 2 )
 

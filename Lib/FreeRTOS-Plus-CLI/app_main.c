@@ -54,9 +54,11 @@
 
 #define USE_UDP			 		     		1
 
-#define USE_TCP			 		     		1
+#define USE_TCP			 		     		0
 
-#define USE_IPERF3                          0
+#if ( BUILD_IPERF3 == 1 )
+    #define USE_IPERF3                          0
+#endif
 
 #define USE_ZERO_COPY 						1
 
@@ -1114,11 +1116,13 @@ static void network_up_status_thread_fn(void *io_params) {
                          NULL );
 #endif
 
-#if USE_IPERF3
+#if ( BUILD_IPERF3 == 1 )
+    #if USE_IPERF3
 
-            vIPerfInstall();
+                vIPerfInstall();
 
-#endif
+    #endif /* USE_IPERF3 */
+#endif /* ( BUILD_IPERF3 == 1 ) */
 
         }
 
