@@ -44,10 +44,14 @@
 
 #include "iperf_task.h"
 
+#include "user_commands.h"
+
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
-#define mainCLI_TASK_PRIORITY               tskIDLE_PRIORITY
+#define mainCLI_TASK_PRIORITY               (tskIDLE_PRIORITY)
 
+#define mainUSER_COMMAND_TASK_STACK_SIZE    2048
+#define mainUSER_COMMAND_TASK_PRIORITY      (tskIDLE_PRIORITY)
 /*-----------------------------------------------------------*/
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
@@ -64,14 +68,16 @@
 
 #define USE_TCP_ZERO_COPY 		     		0
 
+#define USE_USER_COMMAND_TASK               0
+
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
 
 /* Logging module configuration. */
 #define mainLOGGING_TASK_STACK_SIZE         256
-#define mainLOGGING_TASK_PRIORITY           tskIDLE_PRIORITY
-#define mainLOGGING_QUEUE_LENGTH            10
+#define mainLOGGING_TASK_PRIORITY           (tskIDLE_PRIORITY + 1)
+#define mainLOGGING_QUEUE_LENGTH            100
 
 #define mainMAX_UDP_RESPONSE_SIZE           1024
 /*-----------------------------------------------------------*/
@@ -1098,7 +1104,7 @@ static void network_up_status_thread_fn(void *io_params) {
 #if USE_UDP
             /* Sockets, and tasks that use the TCP/IP stack can be created here. */
             xTaskCreate( prvCliTask,
-                         "cli",
+                         "CLI_UDP_Server",
                          mainCLI_TASK_STACK_SIZE,
                          NULL,
                          mainCLI_TASK_PRIORITY,
@@ -1109,7 +1115,7 @@ static void network_up_status_thread_fn(void *io_params) {
 
             /* Sockets, and tasks that use the TCP/IP stack can be created here. */
             xTaskCreate( prvCliTask_TCP,
-                         "cli",
+                         "CLI_TCP_Server",
                          mainCLI_TASK_STACK_SIZE,
                          NULL,
                          mainCLI_TASK_PRIORITY,
@@ -1123,6 +1129,17 @@ static void network_up_status_thread_fn(void *io_params) {
 
     #endif /* USE_IPERF3 */
 #endif /* ( BUILD_IPERF3 == 1 ) */
+
+#if USE_USER_COMMAND_TASK
+
+            /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+            xTaskCreate( prvServerWorkTask,
+                         "user_cmnd_task",
+                         mainUSER_COMMAND_TASK_STACK_SIZE,
+                         NULL,
+                         mainUSER_COMMAND_TASK_PRIORITY,
+                         NULL );
+#endif
 
         }
 

@@ -225,7 +225,7 @@ aborted. */
 #define ipconfigTCP_TIME_TO_LIVE                        128 /* also defined in FreeRTOSIPConfigDefaults.h */
 
 /* USE_TCP: Use TCP and all its features */
-#define ipconfigUSE_TCP                                 ( 0 )
+#define ipconfigUSE_TCP                                 ( 1 )
 
 /* USE_WIN: Let TCP use windowing mechanism. */
 #define ipconfigUSE_TCP_WIN                             ( 1 )
@@ -248,7 +248,7 @@ generate replies to incoming ICMP echo (ping) requests. */
 
 /* If ipconfigSUPPORT_OUTGOING_PINGS is set to 1 then the
 FreeRTOS_SendPingRequest() API function is available. */
-#define ipconfigSUPPORT_OUTGOING_PINGS                  0
+#define ipconfigSUPPORT_OUTGOING_PINGS                  1
 
 /* If ipconfigSUPPORT_SELECT_FUNCTION is set to 1 then the FreeRTOS_select()
 (and associated) API function is available. */
@@ -340,7 +340,7 @@ messages. */
 #endif
 
 #define ipconfigFTP_ZERO_COPY_ALIGNED_WRITES            0
-#define ipconfigDNS_USE_CALLBACKS                       0
+#define ipconfigDNS_USE_CALLBACKS                       1
 #define ipconfigSUPPORT_SIGNALS                         0
 
 #define ipconfigMAC_INTERRUPT_PRIORITY                  ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY )

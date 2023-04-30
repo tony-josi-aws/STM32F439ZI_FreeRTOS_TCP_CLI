@@ -61,7 +61,7 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674763447211</id>
+			<id>1682876214313</id>
 			<name>Lib/FreeRTOS-Plus-TCP</name>
 			<type>5</type>
 			<matcher>
@@ -70,7 +70,7 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674763447215</id>
+			<id>1682876214325</id>
 			<name>Lib/FreeRTOS-Plus-TCP</name>
 			<type>5</type>
 			<matcher>
@@ -79,7 +79,7 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674763447218</id>
+			<id>1682876214330</id>
 			<name>Lib/FreeRTOS-Plus-TCP</name>
 			<type>10</type>
 			<matcher>
@@ -88,16 +88,7 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674763447221</id>
-			<name>Lib/FreeRTOS-Plus-TCP</name>
-			<type>10</type>
-			<matcher>
-				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-tools</arguments>
-			</matcher>
-		</filter>
-		<filter>
-			<id>1674763447224</id>
+			<id>1682876214335</id>
 			<name>Lib/FreeRTOS-Plus-TCP</name>
 			<type>10</type>
 			<matcher>
@@ -124,6 +115,15 @@
 			</matcher>
 		</filter>
 		<filter>
+			<id>1682876385933</id>
+			<name>Lib/FreeRTOS-Plus-TCP/tools</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-tcp_utilities</arguments>
+			</matcher>
+		</filter>
+		<filter>
 			<id>1674762592447</id>
 			<name>Lib/FreeRTOS-Kernel/portable/GCC</name>
 			<type>9</type>
@@ -139,6 +139,24 @@
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-heap_4.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1682878078334</id>
+			<name>Lib/FreeRTOS-Plus-TCP/tools/tcp_utilities</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-plus_tcp_demo_cli.c</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1682878078337</id>
+			<name>Lib/FreeRTOS-Plus-TCP/tools/tcp_utilities</name>
+			<type>5</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-NTPDemo.c</arguments>
 			</matcher>
 		</filter>
 		<filter>
