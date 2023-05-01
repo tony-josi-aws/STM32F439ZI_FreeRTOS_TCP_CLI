@@ -68,7 +68,7 @@
 
 #define USE_TCP_ZERO_COPY 		     		0
 
-#define USE_USER_COMMAND_TASK               0
+#define USE_USER_COMMAND_TASK               1
 
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
@@ -289,6 +289,8 @@ void app_main( void )
             xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
         #endif
 
+        xServerAddress.sin_family = FREERTOS_AF_INET;
+
         FreeRTOS_bind( xCLIServerSocket, &( xServerAddress ), sizeof( xServerAddress ) );
 
         configPRINTF( ( "Waiting for requests...\n" ) );
@@ -476,6 +478,8 @@ void app_main( void )
         #else
             xServerAddress.sin_addr = FreeRTOS_GetIPAddress();
         #endif
+
+        xServerAddress.sin_family = FREERTOS_AF_INET;
 
         FreeRTOS_bind( xListeningSocket, &( xServerAddress ), sizeof( xServerAddress ) );
 
