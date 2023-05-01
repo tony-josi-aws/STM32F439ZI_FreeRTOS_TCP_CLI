@@ -46,6 +46,8 @@
 
 #include "user_commands.h"
 
+#include "plus_tcp_demo_cli.h"
+
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
 #define mainCLI_TASK_PRIORITY               (tskIDLE_PRIORITY)
@@ -55,6 +57,8 @@
 /*-----------------------------------------------------------*/
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
+
+#define USE_IPv6_END_POINTS                 1
 
 #define USE_UDP			 		     		1
 
@@ -69,6 +73,13 @@
 #define USE_TCP_ZERO_COPY 		     		0
 
 #define USE_USER_COMMAND_TASK               1
+
+#if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 )
+    #define TOTAL_ENDPOINTS                 3
+#else
+    #define TOTAL_ENDPOINTS                 1
+#endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
+
 
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
@@ -100,6 +111,9 @@ typedef struct xPacketHeader PacketHeader_t;
 uint32_t ulTim7Tick = 0;
 
 extern UART_HandleTypeDef huart3;
+
+BaseType_t xEndPointCount = 0;
+BaseType_t xUpEndPointCount = 0;
 
 const uint8_t ucMACAddress[ 6 ] = { configMAC_ADDR0, configMAC_ADDR1, configMAC_ADDR2, configMAC_ADDR3, configMAC_ADDR4, configMAC_ADDR5 };
 
@@ -224,14 +238,96 @@ void app_main( void )
     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         /* Initialize the interface descriptor for WinPCap. */
         pxSTM32Fxx_FillInterfaceDescriptor(0, &(xInterfaces[0]));
+
         /* === End-point 0 === */
-        FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[0]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
-        #if ( ipconfigUSE_DHCP != 0 )
         {
-            /* End-point 0 wants to use DHCPv4. */
-            xEndPoints[0].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+            FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[xEndPointCount]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+            #if ( ipconfigUSE_DHCP != 0 )
+            {
+                /* End-point 0 wants to use DHCPv4. */
+                xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+            }
+            #endif /* ( ipconfigUSE_DHCP != 0 ) */
+
+            xEndPointCount += 1;
         }
-        #endif /* ( ipconfigUSE_DHCP != 0 ) */
+
+        /*
+        *     End-point-1 : public
+        *     Network: 2001:470:ed44::/64
+        *     IPv6   : 2001:470:ed44::4514:89d5:4589:8b79/128
+        *     Gateway: fe80::ba27:ebff:fe5a:d751  // obtained from Router Advertisement
+        */
+        #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 )
+            {
+                IPv6_Address_t xIPAddress;
+                IPv6_Address_t xPrefix;
+                IPv6_Address_t xGateWay;
+                IPv6_Address_t xDNSServer1, xDNSServer2;
+
+                FreeRTOS_inet_pton6( "2001:470:ed44::", xPrefix.ucBytes );
+
+                FreeRTOS_CreateIPv6Address( &xIPAddress, &xPrefix, 64, pdTRUE );
+                FreeRTOS_inet_pton6( "fe80::ba27:ebff:fe5a:d751", xGateWay.ucBytes );
+
+                FreeRTOS_FillEndPoint_IPv6( &( xInterfaces[ 0 ] ),
+                                            &( xEndPoints[ xEndPointCount ] ),
+                                            &( xIPAddress ),
+                                            &( xPrefix ),
+                                            64uL, /* Prefix length. */
+                                            &( xGateWay ),
+                                            NULL, /* pxDNSServerAddress: Not used yet. */
+                                            ucMACAddress );
+                FreeRTOS_inet_pton6( "2001:4860:4860::8888", xEndPoints[ xEndPointCount ].ipv6_settings.xDNSServerAddresses[ 0 ].ucBytes );
+                FreeRTOS_inet_pton6( "fe80::1", xEndPoints[ xEndPointCount ].ipv6_settings.xDNSServerAddresses[ 1 ].ucBytes );
+                FreeRTOS_inet_pton6( "2001:4860:4860::8888", xEndPoints[ xEndPointCount ].ipv6_defaults.xDNSServerAddresses[ 0 ].ucBytes );
+                FreeRTOS_inet_pton6( "fe80::1", xEndPoints[ xEndPointCount ].ipv6_defaults.xDNSServerAddresses[ 1 ].ucBytes );
+
+                #if ( ipconfigUSE_RA != 0 )
+                    {
+                        /* End-point 1 wants to use Router Advertisement */
+                        xEndPoints[ xEndPointCount ].bits.bWantRA = pdTRUE;
+                    }
+                #endif /* #if( ipconfigUSE_RA != 0 ) */
+                #if ( ipconfigUSE_DHCPv6 != 0 )
+                    {
+                        /* End-point 1 wants to use DHCPv6. */
+                        xEndPoints[ xEndPointCount ].bits.bWantDHCP = pdTRUE;
+                    }
+                #endif /* ( ipconfigUSE_DHCPv6 != 0 ) */
+
+                xEndPointCount += 1;
+
+            }
+
+            /*
+            *     End-point-3 : private
+            *     Network: fe80::/10 (link-local)
+            *     IPv6   : fe80::d80e:95cc:3154:b76a/128
+            *     Gateway: -
+            */
+            {
+                IPv6_Address_t xIPAddress;
+                IPv6_Address_t xPrefix;
+
+                FreeRTOS_inet_pton6( "fe80::", xPrefix.ucBytes );
+                FreeRTOS_inet_pton6( "fe80::7009", xIPAddress.ucBytes );
+
+                FreeRTOS_FillEndPoint_IPv6(
+                    &( xInterfaces[ 0 ] ),
+                    &( xEndPoints[ xEndPointCount ] ),
+                    &( xIPAddress ),
+                    &( xPrefix ),
+                    10U,  /* Prefix length. */
+                    NULL, /* No gateway */
+                    NULL, /* pxDNSServerAddress: Not used yet. */
+                    ucMACAddress );
+
+                xEndPointCount += 1;
+            }
+
+        #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
+
         FreeRTOS_IPInit_Multi();
     #else
         /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
@@ -1096,78 +1192,100 @@ static void network_up_status_thread_fn(void *io_params) {
     /* If the network has just come up...*/
     if( eNetworkEvent == eNetworkUp )
     {
-    uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
-    char cBuffer[ 16 ];
+        uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
+        char cBuffer[ 16 ];
 
-        /* Create the tasks that use the IP stack if they have not already been
-         * created. */
-        if( xTasksAlreadyCreated == pdFALSE )
+        xUpEndPointCount += 1;
+
+        if( xUpEndPointCount >= TOTAL_ENDPOINTS )
         {
-            xTasksAlreadyCreated = pdTRUE;
 
-#if USE_UDP
-            /* Sockets, and tasks that use the TCP/IP stack can be created here. */
-            xTaskCreate( prvCliTask,
-                         "CLI_UDP_Server",
-                         mainCLI_TASK_STACK_SIZE,
-                         NULL,
-                         mainCLI_TASK_PRIORITY,
-                         NULL );
-#endif
+            /* Create the tasks that use the IP stack if they have not already been
+            * created. */
+            if( xTasksAlreadyCreated == pdFALSE )
+            {
+                xTasksAlreadyCreated = pdTRUE;
 
-#if USE_TCP
+                #if USE_UDP
+                
+                    /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+                    xTaskCreate( prvCliTask,
+                                "CLI_UDP_Server",
+                                mainCLI_TASK_STACK_SIZE,
+                                NULL,
+                                mainCLI_TASK_PRIORITY,
+                                NULL );
+                
+                #endif
 
-            /* Sockets, and tasks that use the TCP/IP stack can be created here. */
-            xTaskCreate( prvCliTask_TCP,
-                         "CLI_TCP_Server",
-                         mainCLI_TASK_STACK_SIZE,
-                         NULL,
-                         mainCLI_TASK_PRIORITY,
-                         NULL );
-#endif
+                #if USE_TCP
 
-#if ( BUILD_IPERF3 == 1 )
-    #if USE_IPERF3
+                    /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+                    xTaskCreate( prvCliTask_TCP,
+                                "CLI_TCP_Server",
+                                mainCLI_TASK_STACK_SIZE,
+                                NULL,
+                                mainCLI_TASK_PRIORITY,
+                                NULL );
+                
+                #endif
 
-                vIPerfInstall();
+                #if ( BUILD_IPERF3 == 1 )
 
-    #endif /* USE_IPERF3 */
-#endif /* ( BUILD_IPERF3 == 1 ) */
+                    #if USE_IPERF3
 
-#if USE_USER_COMMAND_TASK
+                        vIPerfInstall();
 
-            /* Sockets, and tasks that use the TCP/IP stack can be created here. */
-            xTaskCreate( prvServerWorkTask,
-                         "user_cmnd_task",
-                         mainUSER_COMMAND_TASK_STACK_SIZE,
-                         NULL,
-                         mainUSER_COMMAND_TASK_PRIORITY,
-                         NULL );
-#endif
+                    #endif /* USE_IPERF3 */
+
+                #endif /* ( BUILD_IPERF3 == 1 ) */
+
+                #if USE_USER_COMMAND_TASK
+
+                    /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+                    xTaskCreate( prvServerWorkTask,
+                                "user_cmnd_task",
+                                mainUSER_COMMAND_TASK_STACK_SIZE,
+                                NULL,
+                                mainUSER_COMMAND_TASK_PRIORITY,
+                                NULL );
+
+                #endif
+
+                network_up = 1;
+                xTaskNotifyGive( network_up_task_handle );
+
+            }
 
         }
 
-        /* Print out the network configuration, which may have come from a DHCP
-         * server. */
-#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-        FreeRTOS_GetEndPointConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress, pxNetworkEndPoints );
-#else
-        FreeRTOS_GetAddressConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress );
-#endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
-        FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
-        configPRINTF( ( "IP Address: %s\n", cBuffer ) );
+        #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
 
-        FreeRTOS_inet_ntoa( ulNetMask, cBuffer );
-        configPRINTF( ( "Subnet Mask: %s\n", cBuffer ) );
+            showEndPoint( pxEndPoint );
+        
+        #else
+        
+            /* Print out the network configuration, which may have come from a DHCP
+            * server. */
+            #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                FreeRTOS_GetEndPointConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress, pxNetworkEndPoints );
+            #else
+                FreeRTOS_GetAddressConfiguration( &ulIPAddress, &ulNetMask, &ulGatewayAddress, &ulDNSServerAddress );
+            #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
-        FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
-        configPRINTF( ( "Gateway Address: %s\n", cBuffer ) );
+            FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
+            configPRINTF( ( "IP Address: %s\n", cBuffer ) );
 
-        FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
-        configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
+            FreeRTOS_inet_ntoa( ulNetMask, cBuffer );
+            configPRINTF( ( "Subnet Mask: %s\n", cBuffer ) );
 
-        network_up = 1;
-        xTaskNotifyGive( network_up_task_handle );
+            FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
+            configPRINTF( ( "Gateway Address: %s\n", cBuffer ) );
+
+            FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
+            configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
+        
+        #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
     }
     else if( eNetworkEvent == eNetworkDown )
