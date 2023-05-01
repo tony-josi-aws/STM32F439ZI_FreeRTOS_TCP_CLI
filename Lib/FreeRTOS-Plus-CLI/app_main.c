@@ -74,8 +74,10 @@
 
 #define USE_USER_COMMAND_TASK               1
 
-#if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 )
+#if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
+#elif ( ipconfigUSE_IPv4 == 0 && ipconfigUSE_IPv6 != 0 )
+    #define TOTAL_ENDPOINTS                 2
 #else
     #define TOTAL_ENDPOINTS                 1
 #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
@@ -240,17 +242,19 @@ void app_main( void )
         pxSTM32Fxx_FillInterfaceDescriptor(0, &(xInterfaces[0]));
 
         /* === End-point 0 === */
-        {
-            FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[xEndPointCount]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
-            #if ( ipconfigUSE_DHCP != 0 )
+        #if ( ipconfigUSE_IPv4 != 0 )
             {
-                /* End-point 0 wants to use DHCPv4. */
-                xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
-            }
-            #endif /* ( ipconfigUSE_DHCP != 0 ) */
+                FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[xEndPointCount]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+                #if ( ipconfigUSE_DHCP != 0 )
+                {
+                    /* End-point 0 wants to use DHCPv4. */
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+                }
+                #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
-            xEndPointCount += 1;
-        }
+                xEndPointCount += 1;
+            }
+        #endif /* ( ipconfigUSE_IPv4 != 0 ) */
 
         /*
         *     End-point-1 : public
@@ -1206,39 +1210,43 @@ static void network_up_status_thread_fn(void *io_params) {
             {
                 xTasksAlreadyCreated = pdTRUE;
 
-                #if USE_UDP
-                
-                    /* Sockets, and tasks that use the TCP/IP stack can be created here. */
-                    xTaskCreate( prvCliTask,
-                                "CLI_UDP_Server",
-                                mainCLI_TASK_STACK_SIZE,
-                                NULL,
-                                mainCLI_TASK_PRIORITY,
-                                NULL );
-                
-                #endif
+                #if ( ipconfigUSE_IPv4 != 0 )
 
-                #if USE_TCP
+                    #if USE_UDP
+                    
+                        /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+                        xTaskCreate( prvCliTask,
+                                    "CLI_UDP_Server",
+                                    mainCLI_TASK_STACK_SIZE,
+                                    NULL,
+                                    mainCLI_TASK_PRIORITY,
+                                    NULL );
+                    
+                    #endif
 
-                    /* Sockets, and tasks that use the TCP/IP stack can be created here. */
-                    xTaskCreate( prvCliTask_TCP,
-                                "CLI_TCP_Server",
-                                mainCLI_TASK_STACK_SIZE,
-                                NULL,
-                                mainCLI_TASK_PRIORITY,
-                                NULL );
-                
-                #endif
+                    #if USE_TCP
 
-                #if ( BUILD_IPERF3 == 1 )
+                        /* Sockets, and tasks that use the TCP/IP stack can be created here. */
+                        xTaskCreate( prvCliTask_TCP,
+                                    "CLI_TCP_Server",
+                                    mainCLI_TASK_STACK_SIZE,
+                                    NULL,
+                                    mainCLI_TASK_PRIORITY,
+                                    NULL );
+                    
+                    #endif
 
-                    #if USE_IPERF3
+                    #if ( BUILD_IPERF3 == 1 )
 
-                        vIPerfInstall();
+                        #if USE_IPERF3
 
-                    #endif /* USE_IPERF3 */
+                            vIPerfInstall();
 
-                #endif /* ( BUILD_IPERF3 == 1 ) */
+                        #endif /* USE_IPERF3 */
+
+                    #endif /* ( BUILD_IPERF3 == 1 ) */
+
+                #endif /* ( ipconfigUSE_IPv4 != 0) */
 
                 #if USE_USER_COMMAND_TASK
 
