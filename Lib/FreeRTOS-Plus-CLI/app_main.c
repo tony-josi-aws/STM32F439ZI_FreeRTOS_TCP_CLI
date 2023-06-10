@@ -1373,3 +1373,8 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
   }
 
 }
+
+uint32_t ulApplicationTimeHook( void )
+{
+	return 1;
+}

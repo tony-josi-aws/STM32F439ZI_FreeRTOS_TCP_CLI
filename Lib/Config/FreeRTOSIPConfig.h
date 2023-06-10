@@ -46,6 +46,8 @@ extern "C" {
 
 #define ipconfigIPv4_BACKWARD_COMPATIBLE 0
 
+#define ipconfigUSE_IPv4    ( 0 )
+
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
 #define ipconfigBYTE_ORDER pdFREERTOS_LITTLE_ENDIAN
@@ -67,7 +69,7 @@ used as defaults. */
 
 /* Include support for LLMNR: Link-local Multicast Name Resolution
 (non-Microsoft) */
-#define ipconfigUSE_LLMNR                           ( 1 )
+#define ipconfigUSE_LLMNR                           ( 0 )
 
 /* Include support for NBNS: NetBIOS Name Service (Microsoft) */
 #define ipconfigUSE_NBNS                            ( 0 )
@@ -78,7 +80,7 @@ and also DNS may use small timeouts.  If a DNS reply comes in after the DNS
 socket has been destroyed, the result will be stored into the cache.  The next
 call to FreeRTOS_gethostbyname() will return immediately, without even creating
 a socket. */
-#define ipconfigUSE_DNS_CACHE                       ( 1 )
+#define ipconfigUSE_DNS_CACHE                       ( 0 )
 #define ipconfigDNS_CACHE_NAME_LENGTH               ( 16 )
 #define ipconfigDNS_CACHE_ENTRIES                   ( 4 )
 #define ipconfigDNS_REQUEST_ATTEMPTS                ( 4 )
@@ -140,7 +142,8 @@ stack will revert to using the static IP address even when ipconfigUSE_DHCP is
 set to 1 if a valid configuration cannot be obtained from a DHCP server for any
 reason.  The static configuration used is that passed into the stack by the
 FreeRTOS_IPInit() function call. */
-#define ipconfigUSE_DHCP                            1
+#define ipconfigUSE_DHCP                            0
+#define ipconfigUSE_DHCPv6                            1
 #define ipconfigDHCP_REGISTER_HOSTNAME              1
 #define ipconfigDHCP_USES_UNICAST                   1
 
@@ -240,7 +243,7 @@ be divisible by 8. */
 
 /* Set ipconfigUSE_DNS to 1 to include a basic DNS client/resolver.  DNS is used
 through the FreeRTOS_gethostbyname() API function. */
-#define ipconfigUSE_DNS                                 1
+#define ipconfigUSE_DNS                                 0
 
 /* If ipconfigREPLY_TO_INCOMING_PINGS is set to 1 then the IP stack will
 generate replies to incoming ICMP echo (ping) requests. */
@@ -320,7 +323,7 @@ extern void vLoggingPrintf( const char * pcFormat, ... );
 1 then FreeRTOS_debug_printf should be defined to the function used to print
 out the debugging messages. */
 #ifndef ipconfigHAS_DEBUG_PRINTF
-    #define ipconfigHAS_DEBUG_PRINTF                    1
+    #define ipconfigHAS_DEBUG_PRINTF                    0
 #endif
 
 #if( ipconfigHAS_DEBUG_PRINTF == 1 )
@@ -332,7 +335,7 @@ FreeRTOS_netstat() command, and ping replies.  If ipconfigHAS_PRINTF is set to 1
 then FreeRTOS_printf should be set to the function used to print out the
 messages. */
 #ifndef ipconfigHAS_PRINTF
-    #define ipconfigHAS_PRINTF                          1
+    #define ipconfigHAS_PRINTF                          0
 #endif
 
 #if( ipconfigHAS_PRINTF == 1 )
