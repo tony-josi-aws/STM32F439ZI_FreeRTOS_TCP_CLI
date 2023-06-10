@@ -76,7 +76,7 @@ const char * pcCommandList[] =
     /*      "ping6 2606:4700:f1::1", */
     /*      "ping6 2606:4700:f1::1", */
           "dnsq4  aws.amazon.com",
-    /*      "dnsq6  google.nl", */
+          "dnsq6  google.nl",
     /*      "dnsq4  google.es", */
     /*      "dnsq6  google.co.uk", */
     /*      "udp 192.168.2.11@7 Hello world 1\r\n", */
