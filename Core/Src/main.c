@@ -15,6 +15,7 @@
   *
   ******************************************************************************
   */
+#include <limits.h>
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -39,8 +40,11 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-#define LED_HW 		0
-#define TCP_CLI		1
+#define LED_HW 		1
+#define TCP_CLI		0
+
+#define TIM7_NOTIFY			(1U)
+#define TIM10_NOTIFY	    ((1 << 1))
 
 /* USER CODE END PM */
 
@@ -48,6 +52,7 @@
 RNG_HandleTypeDef hrng;
 
 TIM_HandleTypeDef htim7;
+TIM_HandleTypeDef htim10;
 
 UART_HandleTypeDef huart3;
 
@@ -55,11 +60,19 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
+TaskHandle_t task_1_handle, task_2_handle;
+
 #if LED_HW
 static void task_1_thread_fn(void *io_params) {
+	uint32_t ulNotifiedValue;
 	while(1) {
-		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
-		vTaskDelay(100);
+		xTaskNotifyWait(0, ULONG_MAX, &ulNotifiedValue, portMAX_DELAY );
+
+		if(ulNotifiedValue & TIM7_NOTIFY)
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
+
+		if(ulNotifiedValue & TIM10_NOTIFY)
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 	}
 }
 
@@ -80,6 +93,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_RNG_Init(void);
 static void MX_TIM7_Init(void);
+static void MX_TIM10_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -121,19 +135,32 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_RNG_Init();
   MX_TIM7_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
 
 #if LED_HW
 
-  TaskHandle_t task_1_handle, task_2_handle;
+
   BaseType_t ret_status;
 
   ret_status = xTaskCreate(task_1_thread_fn, "Task_1", 200, "HW from 1", 2, &task_1_handle);
   configASSERT(ret_status == pdPASS);
 
+  /* Start the TIM time Base generation in interrupt mode */
+  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /* Start the TIM time Base generation in interrupt mode */
+  if(HAL_TIM_Base_Start_IT(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+/*
   ret_status = xTaskCreate(task_2_thread_fn, "Task_2", 200, "HW from 2", 2, &task_2_handle);
   configASSERT(ret_status == pdPASS);
-
+*/
   vTaskStartScheduler();
 
 #elif TCP_CLI
@@ -251,9 +278,9 @@ static void MX_TIM7_Init(void)
 
   /* USER CODE END TIM7_Init 1 */
   htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 72 - 1;
+  htim7.Init.Prescaler = 144 - 1;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 100 - 1;
+  htim7.Init.Period = 40000 - 1;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
   {
@@ -268,6 +295,37 @@ static void MX_TIM7_Init(void)
   /* USER CODE BEGIN TIM7_Init 2 */
 
   /* USER CODE END TIM7_Init 2 */
+
+}
+
+/**
+  * @brief TIM10 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM10_Init(void)
+{
+
+  /* USER CODE BEGIN TIM10_Init 0 */
+
+  /* USER CODE END TIM10_Init 0 */
+
+  /* USER CODE BEGIN TIM10_Init 1 */
+
+  /* USER CODE END TIM10_Init 1 */
+  htim10.Instance = TIM10;
+  htim10.Init.Prescaler = 144 - 1;
+  htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim10.Init.Period = 40000 - 1;
+  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM10_Init 2 */
+
+  /* USER CODE END TIM10_Init 2 */
 
 }
 
@@ -441,6 +499,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();
@@ -448,6 +508,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 1 */
   extern void vIncrementTim7Tick( void );
   if (htim->Instance == TIM7) {
+	xTaskNotifyFromISR( task_1_handle, TIM7_NOTIFY, eSetBits, &xHigherPriorityTaskWoken );
     vIncrementTim7Tick();
 
 #ifdef TIM7_TEST
@@ -459,7 +520,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 #endif
 
+  } else if (htim->Instance == TIM10) {
+	  xTaskNotifyFromISR( task_1_handle, TIM10_NOTIFY, eSetBits, &xHigherPriorityTaskWoken );
   }
+
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
   /* USER CODE END Callback 1 */
 }
 
