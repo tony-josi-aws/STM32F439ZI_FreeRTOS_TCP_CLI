@@ -292,7 +292,7 @@
 			FreeRTOS_GetRemoteAddress( xNexSocket, ( struct freertos_sockaddr * ) &pxClient->xRemoteAddr );
 		#else
 			FreeRTOS_GetRemoteAddress( xNexSocket, ( struct freertos_sockaddr * ) &pxClient->xRemoteAddr );
-			FreeRTOS_inet_ntoa( pxClient->xRemoteAddr.sin_addr, pucBuffer );
+			FreeRTOS_inet_ntoa( pxClient->xRemoteAddr.sin_address.ulIP_IPv4, pucBuffer );
 
 			FreeRTOS_printf( ( "vIPerfTask: Received a connection from %s:%u\n",
 				pucBuffer,
@@ -321,7 +321,7 @@
 		char pucBuffer[ 16 ];
 
 	#if( ipconfigUSE_IPv6 == 0 )
-			FreeRTOS_inet_ntoa( pxClient->xRemoteAddr.sin_addr, pucBuffer );
+			FreeRTOS_inet_ntoa( pxClient->xRemoteAddr.sin_address.ulIP_IPv4, pucBuffer );
 			FreeRTOS_printf( ( "vIPerfTCPClose: Closing server socket %s:%u after %u bytes\n",
 				pucBuffer,
 				( unsigned ) FreeRTOS_ntohs( pxClient->xRemoteAddr.sin_port ),
