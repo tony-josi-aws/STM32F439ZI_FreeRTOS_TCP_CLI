@@ -58,21 +58,21 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
-#define USE_UDP			 		     		1
+#define USE_UDP			 		     		0
 
 #define USE_TCP			 		     		0
 
 #if ( BUILD_IPERF3 == 1 )
-    #define USE_IPERF3                          0
+    #define USE_IPERF3                          1
 #endif
 
 #define USE_ZERO_COPY 						1
 
 #define USE_TCP_ZERO_COPY 		     		0
 
-#define USE_USER_COMMAND_TASK               1
+#define USE_USER_COMMAND_TASK               0
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -248,7 +248,7 @@ void app_main( void )
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
                     /* End-point 0 wants to use DHCPv4. */
-                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE; // pdFALSE; // pdTRUE;
                 }
                 #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
@@ -1267,7 +1267,7 @@ static void network_up_status_thread_fn(void *io_params) {
 
         }
 
-        #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+        #if 0
 
             showEndPoint( pxEndPoint );
         

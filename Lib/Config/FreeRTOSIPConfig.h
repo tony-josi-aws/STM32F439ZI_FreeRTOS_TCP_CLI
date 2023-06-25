@@ -44,11 +44,11 @@ extern "C" {
 
 #define ipconfigUSE_IPv4 1
 
-#define ipconfigUSE_IPv6 1
+#define ipconfigUSE_IPv6 0
 
 #define ipconfigUSE_RMII 1
 
-#define BUILD_IPERF3	 0
+#define BUILD_IPERF3	 1
 
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
@@ -202,7 +202,7 @@ to a pre-determinable value. */
 
 #define iptraceFAILED_TO_OBTAIN_NETWORK_BUFFER()    configASSERT( 1 == 0 )
 
-#define ipconfigNUM_NETWORK_BUFFER_DESCRIPTORS      ( 64 )
+#define ipconfigNUM_NETWORK_BUFFER_DESCRIPTORS      ( 24 )
 
 /* A FreeRTOS queue is used to send events from application tasks to the IP
 stack.  ipconfigEVENT_QUEUE_LENGTH sets the maximum number of events that can
@@ -324,7 +324,7 @@ extern void vLoggingPrintf( const char * pcFormat, ... );
 1 then FreeRTOS_debug_printf should be defined to the function used to print
 out the debugging messages. */
 #ifndef ipconfigHAS_DEBUG_PRINTF
-    #define ipconfigHAS_DEBUG_PRINTF                    1
+    #define ipconfigHAS_DEBUG_PRINTF                    0
 #endif
 
 #if( ipconfigHAS_DEBUG_PRINTF == 1 )
@@ -336,7 +336,7 @@ FreeRTOS_netstat() command, and ping replies.  If ipconfigHAS_PRINTF is set to 1
 then FreeRTOS_printf should be set to the function used to print out the
 messages. */
 #ifndef ipconfigHAS_PRINTF
-    #define ipconfigHAS_PRINTF                          1
+    #define ipconfigHAS_PRINTF                          0
 #endif
 
 #if( ipconfigHAS_PRINTF == 1 )
@@ -362,13 +362,13 @@ messages. */
 #define ipconfigIPERF_STACK_SIZE_IPERF_TASK             680
 
 #if 1
-#define ipconfigIPERF_TX_BUFSIZE                        ( 12 * ipconfigTCP_MSS )
-#define ipconfigIPERF_TX_WINSIZE                        ( 12 )
-#define ipconfigIPERF_RX_BUFSIZE                        ( 12 * ipconfigTCP_MSS )
-#define ipconfigIPERF_RX_WINSIZE                        ( 12 )
+#define ipconfigIPERF_TX_BUFSIZE                        ( 16 * ipconfigTCP_MSS )
+#define ipconfigIPERF_TX_WINSIZE                        ( 16 )
+#define ipconfigIPERF_RX_BUFSIZE                        ( 16 * ipconfigTCP_MSS )
+#define ipconfigIPERF_RX_WINSIZE                        ( 16 )
 
 /* The iperf module declares a character buffer to store its send data. */
-#define ipconfigIPERF_RECV_BUFFER_SIZE                  ( 12 * ipconfigTCP_MSS )
+#define ipconfigIPERF_RECV_BUFFER_SIZE                  ( 16 * ipconfigTCP_MSS )
 #endif
 
 #if ipconfigUSE_TCP == 1
