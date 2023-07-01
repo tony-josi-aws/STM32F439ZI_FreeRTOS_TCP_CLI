@@ -58,11 +58,11 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
 #define USE_UDP			 		     		1
 
-#define USE_TCP			 		     		0
+#define USE_TCP			 		     		1
 
 #if ( BUILD_IPERF3 == 1 )
     #define USE_IPERF3                          0
@@ -72,7 +72,9 @@
 
 #define USE_TCP_ZERO_COPY 		     		0
 
-#define USE_USER_COMMAND_TASK               1
+#define USE_USER_COMMAND_TASK               0
+
+#define USE_TCP_ECHO_CLIENT                 0
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -123,7 +125,8 @@ static BaseType_t xTasksAlreadyCreated = pdFALSE;
 
 extern RNG_HandleTypeDef hrng;
 
-static char cInputCommandString[ configMAX_COMMAND_INPUT_SIZE + 1 ];
+static char cInputCommandString_UDP[ configMAX_COMMAND_INPUT_SIZE + 1 ];
+static char cInputCommandString_TCP[ configMAX_COMMAND_INPUT_SIZE + 1 ];
 
 TaskHandle_t network_up_task_handle;
 BaseType_t network_up_task_create_ret_status, network_up;
@@ -411,14 +414,14 @@ void app_main( void )
 
                 configASSERT( (pucReceivedUDPPayload != NULL) && (xCount < configMAX_COMMAND_INPUT_SIZE));
 
-                memcpy(( void * )( &( cInputCommandString[ 0 ] ) ), pucReceivedUDPPayload, xCount);
+                memcpy(( void * )( &( cInputCommandString_UDP[ 0 ] ) ), pucReceivedUDPPayload, xCount);
 
                 FreeRTOS_ReleaseUDPPayloadBuffer( ( void * ) pucReceivedUDPPayload );
 
     #else
 
                 xCount = FreeRTOS_recvfrom( xCLIServerSocket,
-                                            ( void * )( &( cInputCommandString[ 0 ] ) ),
+                                            ( void * )( &( cInputCommandString_UDP[ 0 ] ) ),
                                             configMAX_COMMAND_INPUT_SIZE,
                                             0,
                                             &( xSourceAddress ),
@@ -429,9 +432,9 @@ void app_main( void )
             /* Since we set the receive timeout to portMAX_DELAY, the
             * above call should only return when a command is received. */
             configASSERT( xCount > 0 );
-            cInputCommandString[ xCount ] = '\0';
+            cInputCommandString_UDP[ xCount ] = '\0';
 
-            if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
+            if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString_UDP[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
             {
                 uint8_t ucPacketNumber = 1;
     #ifdef TIM7_TEST
@@ -440,11 +443,11 @@ void app_main( void )
                 #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                     configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                     xSourceAddress.sin_port,
-                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                                                                                    &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                 #else
                     configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
                                                                                     xSourceAddress.sin_port,
-                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                                                                                    &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                 #endif
 
     #else
@@ -452,18 +455,18 @@ void app_main( void )
                 #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                     configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                     xSourceAddress.sin_port,
-                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                                                                                    &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ) ) );
                 #else
                     configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
                                                                                     xSourceAddress.sin_port,
-                                                                                    &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                                                                                    &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ) ) );
                 #endif
 
     #endif
                 do
                 {
                     /* Send the received command to the FreeRTOS+CLI. */
-                    xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString[ PACKET_HEADER_LENGTH ] ),
+                    xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ),
                                                                         pcOutputBuffer,
                                                                         configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 );
 
@@ -531,11 +534,11 @@ void app_main( void )
                 #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                     configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                             xSourceAddress.sin_port,
-                                                                                            cInputCommandString ) );
+                                                                                            cInputCommandString_UDP ) );
                 #else
                     configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
                                                                                             xSourceAddress.sin_port,
-                                                                                            cInputCommandString ) );
+                                                                                            cInputCommandString_UDP ) );
                 #endif
                 
 
@@ -646,13 +649,13 @@ void app_main( void )
             {
                 configASSERT( xCount < configMAX_COMMAND_INPUT_SIZE);
 
-                memcpy(cInputCommandString, pucRxBuffer, xCount);
-                cInputCommandString[ xCount ] = '\0';
+                memcpy(cInputCommandString_TCP, pucRxBuffer, xCount);
+                cInputCommandString_TCP[ xCount ] = '\0';
 
                 /* Echo the response back */
-                /* prvSendResponseBytes_TCP(xCLIServerSocket, cInputCommandString, xCount + 1); */
+                /* prvSendResponseBytes_TCP(xCLIServerSocket, cInputCommandString_TCP, xCount + 1); */
 
-                if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
+                if( prvIsValidRequest( ( const uint8_t * ) &( cInputCommandString_TCP[ 0 ] ), xCount, &( ucRequestId[ 0 ] ) ) == pdTRUE )
                 {
                     uint8_t ucPacketNumber = 1;
     #ifdef TIM7_TEST
@@ -661,11 +664,11 @@ void app_main( void )
                     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                         configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                         xSourceAddress.sin_port,
-                                                                                        &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                                                                                        &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                     #else
                         configPRINTF( ( "Received command. IP:%x Port:%u Content:%s TIM7 period ms: %u \n", xSourceAddress.sin_addr,
                                                                                         xSourceAddress.sin_port,
-                                                                                        &( cInputCommandString[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
+                                                                                        &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                     #endif
 
     #else
@@ -673,18 +676,18 @@ void app_main( void )
                     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                         configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                         xSourceAddress.sin_port,
-                                                                                        &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                                                                                        &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ) ) );
                     #else
                         configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
                                                                                         xSourceAddress.sin_port,
-                                                                                        &( cInputCommandString[ PACKET_HEADER_LENGTH ] ) ) );
+                                                                                        &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ) ) );
                     #endif
 
     #endif
                     do
                     {
                         /* Send the received command to the FreeRTOS+CLI. */
-                        xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString[ PACKET_HEADER_LENGTH ] ),
+                        xResponseRemaining = FreeRTOS_CLIProcessCommand( &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ),
                                                                             pcOutputBuffer,
                                                                             configCOMMAND_INT_MAX_OUTPUT_SIZE - 1 );
 
@@ -752,11 +755,11 @@ void app_main( void )
                     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                         configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                                                                                 xSourceAddress.sin_port,
-                                                                                                cInputCommandString ) );
+                                                                                                cInputCommandString_TCP ) );
                     #else
                         configPRINTF( ( "[ERROR] Malformed request. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_addr,
                                                                                                 xSourceAddress.sin_port,
-                                                                                                cInputCommandString ) );
+                                                                                                cInputCommandString_TCP ) );
                     #endif
                     
 
@@ -1257,6 +1260,14 @@ static void network_up_status_thread_fn(void *io_params) {
                                 NULL,
                                 mainUSER_COMMAND_TASK_PRIORITY,
                                 NULL );
+
+                #endif
+
+
+                #if USE_TCP_ECHO_CLIENT
+
+                    void vStartTCPEchoClientTasks_SingleTasks( uint16_t usTaskStackSize, UBaseType_t uxTaskPriority );
+                    vStartTCPEchoClientTasks_SingleTasks(mainCLI_TASK_STACK_SIZE, mainCLI_TASK_PRIORITY);
 
                 #endif
 
