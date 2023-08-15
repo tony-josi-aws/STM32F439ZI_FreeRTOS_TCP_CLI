@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 0
+#define USE_IPv6_END_POINTS                 1
 
 #define USE_UDP			 		     		1
 
@@ -72,7 +72,7 @@
 
 #define USE_TCP_ZERO_COPY 		     		0
 
-#define USE_USER_COMMAND_TASK               0
+#define USE_USER_COMMAND_TASK               1
 
 #define USE_TCP_ECHO_CLIENT                 0
 
