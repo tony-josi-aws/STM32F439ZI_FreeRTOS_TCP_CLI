@@ -126,12 +126,13 @@ int main(void)
 #if ( configUSE_TRACE_FACILITY == 1)
 
   	  xTraceEnable(TRC_START);
-
+#if 0
 	  typedef TraceRingBuffer_t RecorderData;
 	  extern RecorderData* RecorderDataPtr TRC_CFG_RECORDER_DATA_ATTRIBUTE;
-	  uint32_t uxTraceBuffSize = sizeof(*RecorderDataPtr);
+	  uint32_t uxTraceBuffSize = sizeof(*RecorderDataPtr);  // default 13036 bytes
 
 	  (void) uxTraceBuffSize;
+#endif
 
 #endif
 
