@@ -123,6 +123,18 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
+#if ( configUSE_TRACE_FACILITY == 1)
+
+  	  xTraceEnable(TRC_START);
+
+	  typedef TraceRingBuffer_t RecorderData;
+	  extern RecorderData* RecorderDataPtr TRC_CFG_RECORDER_DATA_ATTRIBUTE;
+	  uint32_t uxTraceBuffSize = sizeof(*RecorderDataPtr);
+
+	  (void) uxTraceBuffSize;
+
+#endif
+
 #if LED_HW
 
   TaskHandle_t task_1_handle, task_2_handle;

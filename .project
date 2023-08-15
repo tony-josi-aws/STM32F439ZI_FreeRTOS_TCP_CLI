@@ -36,6 +36,11 @@
 			<locationURI>REPO_ROOT/Lib</locationURI>
 		</link>
 		<link>
+			<name>TraceRecorder</name>
+			<type>2</type>
+			<locationURI>PROJECT_LOC/Lib/TraceRecorder</locationURI>
+		</link>
+		<link>
 			<name>iperf3</name>
 			<type>2</type>
 			<locationURI>REPO_ROOT/Lib/iperf3</locationURI>
