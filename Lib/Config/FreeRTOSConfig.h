@@ -239,4 +239,8 @@ extern uint32_t ulGetTim7Tick( void );
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE()        ulGetTim7Tick()
 
+#if ( configUSE_TRACE_FACILITY == 1)
+	#include "trcRecorder.h"
+#endif
+
 #endif /* FREERTOS_CONFIG_H */
