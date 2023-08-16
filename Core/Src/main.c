@@ -136,6 +136,12 @@ int main(void)
 
 #endif
 
+	  /* Start the TIM time Base generation in interrupt mode */
+	  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+
 #if LED_HW
 
   TaskHandle_t task_1_handle, task_2_handle;
@@ -150,12 +156,6 @@ int main(void)
   vTaskStartScheduler();
 
 #elif TCP_CLI
-
-  /* Start the TIM time Base generation in interrupt mode */
-  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
-  {
-    Error_Handler();
-  }
 
   extern void app_main( void );
   app_main();
