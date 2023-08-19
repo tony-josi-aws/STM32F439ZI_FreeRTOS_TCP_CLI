@@ -70,7 +70,7 @@
 
 #define USE_ZERO_COPY 						1
 
-#define USE_TCP_ZERO_COPY 		     		0
+#define USE_TCP_ZERO_COPY 		     		1
 
 #define USE_USER_COMMAND_TASK               0
 
@@ -634,6 +634,17 @@ void app_main( void )
 
     #if USE_TCP_ZERO_COPY
 
+                uint8_t *pucZeroCopyRxBuffPtr = NULL;
+                xCount = FreeRTOS_recv( xCLIServerSocket, &pucZeroCopyRxBuffPtr, ipconfigTCP_MSS, FREERTOS_ZERO_COPY );
+                if( pucZeroCopyRxBuffPtr != NULL )
+                {
+                    memcpy( pucRxBuffer, pucZeroCopyRxBuffPtr, xCount );
+                    FreeRTOS_ReleaseTCPPayloadBuffer( xCLIServerSocket, pucZeroCopyRxBuffPtr, xCount );
+                }
+                else
+                {
+                    xCount = -1;
+                }
 
     #else
 
@@ -854,6 +865,47 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
 
     #if USE_TCP_ZERO_COPY
 
+            /* Send response. */
+
+            lBytes = sizeof( PacketHeader_t );
+            lSent = 0;
+            lTotalSent = 0;
+
+            /* Call send() until all the data has been sent. */
+            while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+            {
+                BaseType_t xAvlSpace = 0;
+                BaseType_t xBytesToSend = 0;
+                uint8_t *pucTCPZeroCopyStrmBuffer = FreeRTOS_get_tx_head( xCLIServerSocket, &xAvlSpace );
+
+                if(pucTCPZeroCopyStrmBuffer)
+                {
+                    if((lBytes - lTotalSent) > xAvlSpace)
+                    {
+                        xBytesToSend = xAvlSpace;
+                    }
+                    else
+                    {
+                        xBytesToSend = (lBytes - lTotalSent);
+                    }
+                    memcpy(pucTCPZeroCopyStrmBuffer, ( void * ) (( (uint8_t *) &header ) + lTotalSent),  xBytesToSend);
+                }
+                else
+                {
+                    ret = pdFAIL;
+                    break;
+                }
+                
+                lSent = FreeRTOS_send( xCLIServerSocket, NULL, xBytesToSend, 0 );
+                lTotalSent += lSent;
+            }
+
+            if( lSent < 0 )
+            {
+                /* Socket closed? */
+                ret = pdFAIL;
+            }
+
     #else
 
             /* Send response. */
@@ -865,7 +917,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
             /* Call send() until all the data has been sent. */
             while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
             {
-                lSent = FreeRTOS_send( xCLIServerSocket, ( void * ) ( &header ), lBytes - lTotalSent, 0 );
+                lSent = FreeRTOS_send( xCLIServerSocket, ( void * ) (( (uint8_t *) &header ) + lTotalSent), lBytes - lTotalSent, 0 );
                 lTotalSent += lSent;
             }
 
@@ -875,7 +927,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
                 ret = pdFAIL;
             }
 
-    #endif /* USE_ZERO_COPY */
+    #endif /* USE_TCP_ZERO_COPY */
 
         if( lTotalSent != PACKET_HEADER_LENGTH )
         {
@@ -1080,6 +1132,48 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
 
     #if USE_TCP_ZERO_COPY
 
+                /* Send response. */
+
+                lBytes = ulBytesToSend + PACKET_HEADER_LENGTH;
+                lSent = 0;
+                lTotalSent = 0;
+
+                /* Call send() until all the data has been sent. */
+                while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+                {
+
+                    BaseType_t xAvlSpace = 0;
+                    BaseType_t xBytesToSend = 0;
+                    uint8_t *pucTCPZeroCopyStrmBuffer = FreeRTOS_get_tx_head( xCLIServerSocket, &xAvlSpace );
+
+                    if(pucTCPZeroCopyStrmBuffer)
+                    {
+                        if((lBytes - lTotalSent) > xAvlSpace)
+                        {
+                            xBytesToSend = xAvlSpace;
+                        }
+                        else
+                        {
+                            xBytesToSend = (lBytes - lTotalSent);
+                        }
+                        memcpy(pucTCPZeroCopyStrmBuffer, ( void * ) (( (uint8_t *) ucTcpResponseBuffer ) + lTotalSent),  xBytesToSend);
+                    }
+                    else
+                    {
+                        ret = pdFAIL;
+                        break;
+                    }
+
+                    lSent = FreeRTOS_send( xCLIServerSocket, NULL, xBytesToSend, 0 );
+                    lTotalSent += lSent;
+                }
+
+                if( lSent < 0 )
+                {
+                    /* Socket closed? */
+                    break;
+                }
+
     #else
 
                 /* Send response. */
@@ -1091,7 +1185,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
                 /* Call send() until all the data has been sent. */
                 while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
                 {
-                    lSent = FreeRTOS_send( xCLIServerSocket, ucTcpResponseBuffer, lBytes - lTotalSent, 0 );
+                    lSent = FreeRTOS_send( xCLIServerSocket, ucTcpResponseBuffer + lTotalSent, lBytes - lTotalSent, 0 );
                     lTotalSent += lSent;
                 }
 
@@ -1101,9 +1195,9 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
                     break;
                 }
 
-    #endif /* USE_ZERO_COPY */
+    #endif /* USE_TCP_ZERO_COPY */
 
-            if( lSent != ( ulBytesToSend + PACKET_HEADER_LENGTH ) )
+            if( lTotalSent != ( ulBytesToSend + PACKET_HEADER_LENGTH ) )
             {
                 configPRINTF( ("[ERROR] Failed to send response.\n" ) );
                 ret = pdFAIL;
