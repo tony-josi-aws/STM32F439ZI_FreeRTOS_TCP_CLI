@@ -10,6 +10,8 @@ sent is a pseudo random size between 20 and echoBUFFER_SIZES. */
 #define echoBUFFER_SIZE_MULTIPLIER	( 3 )
 #define echoBUFFER_SIZES			( ipconfigTCP_MSS * echoBUFFER_SIZE_MULTIPLIER )
 
+#if (ipconfigUSE_TCP != 0)
+
 /* Rx and Tx time outs are used to ensure the sockets do not wait too long for
 missing data. */
 static const TickType_t xReceiveTimeOut = pdMS_TO_TICKS( 4000 );
@@ -265,3 +267,4 @@ TickType_t xTimeOnEntering;
 	}
 }
 /*-----------------------------------------------------------*/
+#endif /* (ipconfigUSE_TCP != 0) */
