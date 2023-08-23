@@ -42,13 +42,42 @@ extern "C" {
 
 #include "stm32f4xx_hal.h"
 
+/* Debug Exception and Monitor Control Register */
+#define ARM_REG_DEMCR         ( *( volatile uint32_t * ) 0xE000EDFC )
+
+/* DWT Control register */
+#define ARM_REG_DWT_CTRL      ( *( volatile uint32_t * ) 0xE0001000 )
+
+/* DWT Cycle Count Register */
+#define ARM_REG_DWT_CYCCNT    ( *( volatile uint32_t * ) 0xE0001004 )
+
+/* CYCCNTENA bit in DWT_CONTROL register */
+#define DWT_CYCCNTENA_BIT     ( 1UL << 0 )
+
+/* Trace enable bit in DEMCR register */
+#define DWT_TRCENA_BIT        ( 1UL << 24 )
+
+#define LOG_SYSCLK_COUNT_RESET        do { 							\
+		extern uint32_t time_logg_cntr;								\
+		time_logg_cntr = 0;											\
+} while(0)
+
+#define LOG_SYSCLK_COUNT        do { 								\
+		extern uint32_t time_logger[], time_logg_cntr;			\
+		time_logger[time_logg_cntr++] = ARM_REG_DWT_CYCCNT;		\
+} while(0)
+
 #define ipconfigUSE_IPv4 1
 
-#define ipconfigUSE_IPv6 1
+#define ipconfigUSE_IPv6 0
 
 #define ipconfigUSE_RMII 1
 
 #define BUILD_IPERF3	 0
+
+#define ipconfigRAW_PACKETS     1
+
+#define ipconfigCOMPATIBLE_WITH_SINGLE				1
 
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
@@ -229,7 +258,7 @@ aborted. */
 #define ipconfigTCP_TIME_TO_LIVE                        128 /* also defined in FreeRTOSIPConfigDefaults.h */
 
 /* USE_TCP: Use TCP and all its features */
-#define ipconfigUSE_TCP                                 ( 1 )
+#define ipconfigUSE_TCP                                 ( 0 )
 
 /* USE_WIN: Let TCP use windowing mechanism. */
 #define ipconfigUSE_TCP_WIN                             ( 1 )
@@ -381,7 +410,7 @@ messages. */
 
 #define configTCP_ECHO_CLIENT_PORT                      ( 32002 )
 
-#define ipconfigARP_STORES_REMOTE_ADDRESSES             ( 1 )
+#define ipconfigARP_STORES_REMOTE_ADDRESSES             ( 0 )
 
 #define ipconfigETHERNET_DRIVER_FILTERS_PACKETS         ( 1 )
 

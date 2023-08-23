@@ -58,11 +58,11 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
 #define USE_UDP			 		     		1
 
-#define USE_TCP			 		     		1
+#define USE_TCP			 		     		0
 
 #if ( BUILD_IPERF3 == 1 )
     #define USE_IPERF3                          0
@@ -138,6 +138,8 @@ BaseType_t network_up_task_create_ret_status, network_up;
 
 #endif
 
+uint32_t time_check = 0;
+
 /*-----------------------------------------------------------*/
 
 
@@ -209,6 +211,9 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
 
 static void network_up_status_thread_fn(void *io_params);
 
+uint32_t time_logger[20];
+uint32_t time_logg_cntr;
+
 /*-----------------------------------------------------------*/
 
 void app_main( void )
@@ -232,7 +237,7 @@ void app_main( void )
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
-	#if ( ipconfigMULTI_INTERFACE == 1 ) && ( ipconfigCOMPATIBLE_WITH_SINGLE == 0 )
+	#if ( ipconfigMULTI_INTERFACE == 1 )
     	static NetworkInterface_t xInterfaces[1];
     	static NetworkEndPoint_t xEndPoints[4];
 	#endif
@@ -397,6 +402,12 @@ void app_main( void )
         FreeRTOS_bind( xCLIServerSocket, &( xServerAddress ), sizeof( xServerAddress ) );
 
         configPRINTF( ( "Waiting for requests...\n" ) );
+
+        /* DWT Cycle Count Register */
+        #define ARM_REG_DWT_CYCCNT    ( *( volatile uint32_t * ) 0xE0001004 )
+        uint32_t time_check = ARM_REG_DWT_CYCCNT;
+        vTaskDelay(50);
+        FreeRTOS_debug_printf(("TIME DIFF: %u\r\n", ARM_REG_DWT_CYCCNT - time_check ));
 
         for( ;; )
         {
@@ -970,19 +981,21 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
     #endif
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
-
+            //time_check = ARM_REG_DWT_CYCCNT;
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                         ( void * ) ( pucBuffer ),
                                         sizeof( PacketHeader_t ),
                                         FREERTOS_ZERO_COPY,
                                         pxSourceAddress,
                                         xSourceAddressLength );
+            //extern uint32_t time_check;
+            //FreeRTOS_debug_printf(("eStackTxEvent DELAY: %u\r\n", (ARM_REG_DWT_CYCCNT - time_check) ));
     #else
 
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                         ( void * ) ( &header ),
                                         sizeof( PacketHeader_t ),
-                                        0,
+                                        FREERTOS_AF_RAW,
                                         pxSourceAddress,
                                         xSourceAddressLength );
 
@@ -1055,19 +1068,22 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
                 memcpy( pucBuffer , &( ucUdpResponseBuffer[ 0 ] ), ulBytesToSend + PACKET_HEADER_LENGTH );
 
                 /* Send response. */
+                //time_check = ARM_REG_DWT_CYCCNT;
                 lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                             ( void * ) pucBuffer,
                                             ulBytesToSend + PACKET_HEADER_LENGTH,
                                             FREERTOS_ZERO_COPY,
                                             pxSourceAddress,
                                             xSourceAddressLength );
+                //extern uint32_t time_check;
+                //FreeRTOS_debug_printf(("eStackTxEvent DELAY: %u\r\n", (ARM_REG_DWT_CYCCNT - time_check) ));
     #else
 
                 /* Send response. */
                 lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                             ( void * ) &( ucUdpResponseBuffer[ 0 ] ),
                                             ulBytesToSend + PACKET_HEADER_LENGTH,
-                                            0,
+                                            FREERTOS_AF_RAW,
                                             pxSourceAddress,
                                             xSourceAddressLength );
 
