@@ -58,11 +58,11 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
-#define USE_UDP			 		     		1
+#define USE_UDP			 		     		0
 
-#define USE_TCP			 		     		1
+#define USE_TCP			 		     		0
 
 #if ( BUILD_IPERF3 == 1 )
     #define USE_IPERF3                          0
@@ -70,11 +70,13 @@
 
 #define USE_ZERO_COPY 						1
 
-#define USE_TCP_ZERO_COPY 		     		1
+#define USE_TCP_ZERO_COPY 		     		0
 
 #define USE_USER_COMMAND_TASK               0
 
 #define USE_TCP_ECHO_CLIENT                 0
+
+#define USE_UDP_ECHO_SERVER                 1
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -84,6 +86,8 @@
     #define TOTAL_ENDPOINTS                 1
 #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
 
+#define UDP_ECHO_PORT                       5005
+static void prvSimpleServerTask( void *pvParameters );
 
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
@@ -208,6 +212,8 @@ static void prvRegisterCLICommands( void );
 static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacketLength, uint8_t * pucRequestId );
 
 static void network_up_status_thread_fn(void *io_params);
+
+uint32_t time_check = 0;
 
 /*-----------------------------------------------------------*/
 
@@ -964,19 +970,42 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
             * First obtain a buffer of adequate length from the TCP/IP stack into which
             the string will be written. */
     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-            uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+
+        	/*Test to validate if adding 2 internally to requested size cause an overflow in pxGetNetworkBufferWithDescriptor */
+        	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( SIZE_MAX - sizeof( UDPPacket_t ) - 1, portMAX_DELAY, ipTYPE_IPv4 );
+        	configASSERT(pucBuffer == NULL);
+
+        	/*Test to validate if adding 2 internally to requested size cause an overflow in pxGetNetworkBufferWithDescriptor */
+        	pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( SIZE_MAX - sizeof( UDPPacket_t ) - 2, portMAX_DELAY, ipTYPE_IPv4 );
+        	configASSERT(pucBuffer == NULL);
+
+        	/*Test to validate if adding 2 internally to requested size cause an overflow in pxGetNetworkBufferWithDescriptor */
+        	pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( SIZE_MAX - sizeof( UDPPacket_t ) - 7, portMAX_DELAY, ipTYPE_IPv4 );
+        	configASSERT(pucBuffer == NULL);
+
+        	pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+        	uint8_t *pucBuffer2 = pxResizeNetworkBufferWithDescriptor(pucBuffer, SIZE_MAX - ipBUFFER_PADDING + 1);
+        	configASSERT(pucBuffer2 == NULL);
+        	//FreeRTOS_ReleaseUDPPayloadBuffer(pucBuffer);
+
+            //pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
     #else
             uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
     #endif
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
 
+            vTaskSuspendAll();
+            time_check = ARM_REG_DWT_CYCCNT;
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                         ( void * ) ( pucBuffer ),
                                         sizeof( PacketHeader_t ),
                                         FREERTOS_ZERO_COPY,
                                         pxSourceAddress,
                                         xSourceAddressLength );
+            time_check = ARM_REG_DWT_CYCCNT - time_check;
+            xTaskResumeAll();
+
     #else
 
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
@@ -1365,6 +1394,11 @@ static void network_up_status_thread_fn(void *io_params) {
 
                 #endif
 
+
+                #if USE_UDP_ECHO_SERVER
+                    xTaskCreate( prvSimpleServerTask, "SimpCpySrvr", 2048, UDP_ECHO_PORT, tskIDLE_PRIORITY, NULL );
+                #endif /* USE_UDP_ECHO_SERVER */
+
                 network_up = 1;
                 xTaskNotifyGive( network_up_task_handle );
 
@@ -1668,3 +1702,121 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
   }
 
 }
+
+#if USE_UDP_ECHO_SERVER
+    static void prvSimpleServerTask( void *pvParameters )
+    {
+    int32_t lBytes;
+    uint8_t cReceivedString[ 512 ];
+    struct freertos_sockaddr xClient, xBindAddress;
+    uint32_t xClientLength = sizeof( xClient );
+    Socket_t xListeningSocket;
+    int32_t lBytesSent;
+    TickType_t xCLIServerRecvTimeout = portMAX_DELAY;
+
+        /* Just to prevent compiler warnings. */
+        ( void ) pvParameters;
+
+        /* Attempt to open the socket. */
+        xListeningSocket = FreeRTOS_socket( FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP );
+        configASSERT( xListeningSocket != FREERTOS_INVALID_SOCKET );
+
+        /* No need to return from FreeRTOS_recvfrom until a message
+        * is received. */
+        FreeRTOS_setsockopt( xListeningSocket,
+                            0,
+                            FREERTOS_SO_RCVTIMEO,
+                            &( xCLIServerRecvTimeout ),
+                            sizeof( TickType_t ) );
+
+        /* This test receives data sent from a different port on the same IP
+        address.  Configure the freertos_sockaddr structure with the address being
+        bound to.  The strange casting is to try and remove	compiler warnings on 32
+        bit machines.  Note that this task is only created after the network is up,
+        so the IP address is valid here. */
+        xBindAddress.sin_port = ( uint16_t ) ( ( uint32_t ) pvParameters ) & 0xffffUL;
+        xBindAddress.sin_port = FreeRTOS_htons( xBindAddress.sin_port );
+        xBindAddress.sin_family = FREERTOS_AF_INET;
+
+        /* Bind the socket to the port that the client task will send to. */
+        FreeRTOS_bind( xListeningSocket, &xBindAddress, sizeof( xBindAddress ) );
+
+        FreeRTOS_printf(("********* UDP ECHO ***********\n"));
+
+        for( ;; )
+        {
+            lBytes = 0;
+            uint8_t cRXString[ 512 ] = {'\0'};
+            char * cRX_Prefix = "TI AM243x >>> ";
+            /* Zero out the receive array so there is NULL at the end of the string
+            when it is printed out. */
+            memset( cReceivedString, 0x00, sizeof( cReceivedString ) );
+
+            /* Receive data on the socket.  ulFlags is zero, so the zero copy option
+            is not set and the received data is copied into the buffer pointed to by
+            cReceivedString.  By default the block time is portMAX_DELAY.
+            xClientLength is not actually used by FreeRTOS_recvfrom(), but is set
+            appropriately in case future versions do use it. */
+
+            #if USE_ZERO_COPY
+
+                uint8_t *pucReceivedUDPPayload = NULL;
+
+                lBytes = FreeRTOS_recvfrom( xListeningSocket, &pucReceivedUDPPayload, 0, FREERTOS_ZERO_COPY, &xClient, &xClientLength );
+
+                configASSERT( (pucReceivedUDPPayload != NULL) );
+
+                memcpy(( void * )( cReceivedString ), pucReceivedUDPPayload, lBytes);
+
+                FreeRTOS_ReleaseUDPPayloadBuffer( ( void * ) pucReceivedUDPPayload );
+
+            #else
+
+                lBytes = FreeRTOS_recvfrom( xListeningSocket, cReceivedString, sizeof( cReceivedString ), 0, &xClient, &xClientLength );
+
+            #endif /* USE_ZERO_COPY */
+
+
+            if (lBytes > 0)
+            {
+                configASSERT(lBytes < (512 - strlen(cRX_Prefix) ) );
+                memcpy(cRXString, cRX_Prefix, strlen(cRX_Prefix));
+                memcpy(cRXString + strlen(cRX_Prefix), cReceivedString, lBytes );
+
+                #if USE_ZERO_COPY
+                    /*
+                     * First obtain a buffer of adequate length from the TCP/IP stack into which
+                     * the string will be written. 
+                     */
+                    #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
+                        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( lBytes + strlen(cRX_Prefix), portMAX_DELAY, ipTYPE_IPv4 );
+                    #else
+                        uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( lBytes + strlen(cRX_Prefix), portMAX_DELAY );
+                    #endif
+                    
+                    configASSERT( pucBuffer != NULL );
+                    memcpy( pucBuffer , cRXString, lBytes + strlen(cRX_Prefix) );
+
+                    /* Send response. */
+                    vTaskSuspendAll();
+                    time_check = ARM_REG_DWT_CYCCNT;
+                    lBytesSent = FreeRTOS_sendto( xListeningSocket,
+                                                ( void * ) pucBuffer,
+                                                lBytes + strlen(cRX_Prefix),
+                                                FREERTOS_ZERO_COPY,
+                                                &xClient, xClientLength );
+                    time_check = ARM_REG_DWT_CYCCNT - time_check;
+                    xTaskResumeAll();
+                    FreeRTOS_debug_printf(("FreeRTOS_sendto: DELTA: %u\r\n", time_check));
+
+                #else
+
+                    /* Send response. */
+                    FreeRTOS_sendto(xListeningSocket, cRXString, lBytes + strlen(cRX_Prefix), 0, &xClient, xClientLength );
+
+                #endif /* USE_ZERO_COPY */
+
+            }
+        }
+    }
+#endif /* USE_UDP_ECHO_SERVER */
