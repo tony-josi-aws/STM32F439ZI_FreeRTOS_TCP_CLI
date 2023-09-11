@@ -62,7 +62,7 @@
 
 #define USE_UDP			 		     		0
 
-#define USE_TCP			 		     		0
+#define USE_TCP			 		     		1
 
 #if ( BUILD_IPERF3 == 1 )
     #define USE_IPERF3                          0
@@ -70,13 +70,13 @@
 
 #define USE_ZERO_COPY 						1
 
-#define USE_TCP_ZERO_COPY 		     		0
+#define USE_TCP_ZERO_COPY 		     		1
 
 #define USE_USER_COMMAND_TASK               0
 
 #define USE_TCP_ECHO_CLIENT                 0
 
-#define USE_UDP_ECHO_SERVER                 1
+#define USE_UDP_ECHO_SERVER                 0
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -1429,7 +1429,7 @@ static void network_up_status_thread_fn(void *io_params) {
             FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
             configPRINTF( ( "Gateway Address: %s\n", cBuffer ) );
 
-            FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
+            FreeRTOS_inet_ntoa( ulDNxzaSServerAddress, cBuffer );
             configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
         
         #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
