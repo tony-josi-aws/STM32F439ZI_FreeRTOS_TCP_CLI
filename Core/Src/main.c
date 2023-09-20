@@ -24,6 +24,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "FreeRTOS_IP.h"
 
 /* USER CODE END Includes */
 
@@ -39,8 +40,9 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 
-#define LED_HW 		0
-#define TCP_CLI		1
+#define LED_HW 					      0
+#define NOTIFICATION_TIMING		1
+#define TCP_CLI					      1
 
 /* USER CODE END PM */
 
@@ -69,7 +71,37 @@ static void task_2_thread_fn(void *io_params) {
 		vTaskDelay(200);
 	}
 }
-#endif
+#endif /* LED_HW */
+
+#if NOTIFICATION_TIMING
+
+TaskHandle_t task_1_handle, task_2_handle;
+volatile uint32_t uCurrCycleCount;
+
+static void task_1_thread_fn(void *io_params) {
+	while(1) {
+		if( ulTaskNotifyTake( pdFALSE, portMAX_DELAY) == pdTRUE )
+		{
+			uCurrCycleCount = ARM_REG_DWT_CYCCNT - uCurrCycleCount;
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
+		}
+			//vTaskDelay(100);
+	}
+}
+
+static void task_2_thread_fn(void *io_params) {
+
+	TaskHandle_t * pxOtherTask = ( TaskHandle_t * ) io_params;
+
+	while(1) {
+		uCurrCycleCount = ARM_REG_DWT_CYCCNT;
+		xTaskNotifyGive( *pxOtherTask );
+		//vTaskDelay(200);
+		for(volatile uint32_t i = 0; i < (0xFFFFFFFF / 500); ++i);
+	}
+}
+
+#endif /* NOTIFICATION_TIMING */
 
 /* USER CODE END PV */
 
@@ -120,7 +152,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_RNG_Init();
-  MX_TIM7_Init();
+
   /* USER CODE BEGIN 2 */
 
 #if ( configUSE_TRACE_FACILITY == 1)
@@ -136,12 +168,6 @@ int main(void)
 
 #endif
 
-	  /* Start the TIM time Base generation in interrupt mode */
-	  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-
 #if LED_HW
 
   TaskHandle_t task_1_handle, task_2_handle;
@@ -155,7 +181,29 @@ int main(void)
 
   vTaskStartScheduler();
 
+#elif NOTIFICATION_TIMING
+
+  BaseType_t ret_status;
+
+  vMeasureCycleCountInit();
+
+  ret_status = xTaskCreate(task_1_thread_fn, "Task_1", 200, "HW from 1", 3, &task_1_handle);
+  configASSERT(ret_status == pdPASS);
+
+  ret_status = xTaskCreate(task_2_thread_fn, "Task_2", 200, &task_1_handle, 2, &task_2_handle);
+  configASSERT(ret_status == pdPASS);
+
+  vTaskStartScheduler();
+
 #elif TCP_CLI
+
+  MX_TIM7_Init();
+
+  /* Start the TIM time Base generation in interrupt mode */
+  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   extern void app_main( void );
   app_main();

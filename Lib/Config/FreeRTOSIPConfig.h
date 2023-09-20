@@ -394,6 +394,27 @@ extern void pcap_capture_record_packet( const uint8_t * p_packet,
                                         uint32_t packet_length );
 
 
+/*
+ ********************************************************************************
+ * CORTEX-M - Debug Watch and Trace (DWT) TIMER
+ ********************************************************************************
+ */
+
+/* Debug Exception and Monitor Control Register */
+#define ARM_REG_DEMCR         ( *( volatile uint32_t * ) 0xE000EDFC )
+
+/* DWT Control register */
+#define ARM_REG_DWT_CTRL      ( *( volatile uint32_t * ) 0xE0001000 )
+
+/* DWT Cycle Count Register */
+#define ARM_REG_DWT_CYCCNT    ( *( volatile uint32_t * ) 0xE0001004 )
+
+/* CYCCNTENA bit in DWT_CONTROL register */
+#define DWT_CYCCNTENA_BIT     ( 1UL << 0 )
+
+/* Trace enable bit in DEMCR register */
+#define DWT_TRCENA_BIT        ( 1UL << 24 )
+
 
 #ifdef __cplusplus
 } /* extern "C" */
