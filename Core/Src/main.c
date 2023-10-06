@@ -120,7 +120,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_RNG_Init();
-  MX_TIM7_Init();
+  //MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
 #if ( configUSE_TRACE_FACILITY == 1)
@@ -137,10 +137,12 @@ int main(void)
 #endif
 
 	  /* Start the TIM time Base generation in interrupt mode */
+#if 0
 	  if(HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)
 	  {
 	    Error_Handler();
 	  }
+#endif
 
 #if LED_HW
 

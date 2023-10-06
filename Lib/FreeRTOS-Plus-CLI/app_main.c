@@ -50,7 +50,7 @@
 
 /* Demo definitions. */
 #define mainCLI_TASK_STACK_SIZE             512
-#define mainCLI_TASK_PRIORITY               (tskIDLE_PRIORITY)
+#define mainCLI_TASK_PRIORITY               (8)
 
 #define mainUSER_COMMAND_TASK_STACK_SIZE    2048
 #define mainUSER_COMMAND_TASK_PRIORITY      (tskIDLE_PRIORITY)
@@ -68,7 +68,7 @@
     #define USE_IPERF3                          0
 #endif
 
-#define USE_ZERO_COPY 						1
+#define USE_ZERO_COPY 						0
 
 #define USE_TCP_ZERO_COPY 		     		1
 
@@ -256,7 +256,7 @@ void app_main( void )
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
                     /* End-point 0 wants to use DHCPv4. */
-                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE; // pdFALSE; // pdTRUE;
                 }
                 #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
@@ -992,7 +992,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
             //FreeRTOS_debug_printf(("eStackTxEvent DELAY: %u\r\n", (ARM_REG_DWT_CYCCNT - time_check) ));
     #else
 
-            lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
+                        lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                         ( void * ) ( &header ),
                                         sizeof( PacketHeader_t ),
                                         FREERTOS_AF_RAW,
