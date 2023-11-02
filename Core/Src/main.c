@@ -41,7 +41,7 @@
 /* USER CODE BEGIN PM */
 
 #define LED_HW 					      0
-#define NOTIFICATION_TIMING		1
+#define NOTIFICATION_TIMING			  0
 #define TCP_CLI					      1
 
 /* USER CODE END PM */
