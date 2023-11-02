@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 0
+#define USE_IPv6_END_POINTS                 1
 
 #define USE_UDP			 		     		0
 
@@ -1510,15 +1510,15 @@ uint32_t ulGetTim7Tick( void )
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
-{
-    /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
-     * function will automatically get called if a task overflows its stack. */
-    ( void ) pxTask;
-    ( void ) pcTaskName;
-    for( ;; );
-}
-/*-----------------------------------------------------------*/
+// void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
+// {
+//     /* If configCHECK_FOR_STACK_OVERFLOW is set to either 1 or 2 then this
+//      * function will automatically get called if a task overflows its stack. */
+//     ( void ) pxTask;
+//     ( void ) pcTaskName;
+//     for( ;; );
+// }
+// /*-----------------------------------------------------------*/
 
 void vApplicationMallocFailedHook( void )
 {
