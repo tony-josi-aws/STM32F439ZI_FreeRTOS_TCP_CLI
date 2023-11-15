@@ -416,6 +416,9 @@ extern void pcap_capture_record_packet( const uint8_t * p_packet,
 #define DWT_TRCENA_BIT        ( 1UL << 24 )
 
 
+#define ipconfigEVENT_QUEUES               ( 8 )
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
