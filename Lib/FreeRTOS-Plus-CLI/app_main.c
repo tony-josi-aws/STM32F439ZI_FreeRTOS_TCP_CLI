@@ -76,7 +76,7 @@
 
 #define USE_TCP_ECHO_CLIENT                 0
 
-#define USE_UDP_ECHO_SERVER                 0
+#define USE_UDP_ECHO_SERVER                 1
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -1713,13 +1713,20 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     Socket_t xListeningSocket;
     int32_t lBytesSent;
     TickType_t xCLIServerRecvTimeout = portMAX_DELAY;
+    uint8_t cPrio = 3;
+    BaseType_t xSocketRet;
 
         /* Just to prevent compiler warnings. */
         ( void ) pvParameters;
 
         /* Attempt to open the socket. */
         xListeningSocket = FreeRTOS_socket( FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP );
+
         configASSERT( xListeningSocket != FREERTOS_INVALID_SOCKET );
+
+        xSocketRet = FreeRTOS_setsockopt(xListeningSocket, 0, FREERTOS_SO_SOCKET_PRIORITY, &cPrio, sizeof(cPrio));
+
+        configASSERT( xSocketRet == pdPASS );
 
         /* No need to return from FreeRTOS_recvfrom until a message
         * is received. */
@@ -1798,15 +1805,15 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
                     memcpy( pucBuffer , cRXString, lBytes + strlen(cRX_Prefix) );
 
                     /* Send response. */
-                    vTaskSuspendAll();
-                    time_check = ARM_REG_DWT_CYCCNT;
+                    //vTaskSuspendAll();
+                    //time_check = ARM_REG_DWT_CYCCNT;
                     lBytesSent = FreeRTOS_sendto( xListeningSocket,
                                                 ( void * ) pucBuffer,
                                                 lBytes + strlen(cRX_Prefix),
-                                                FREERTOS_ZERO_COPY,
+												FREERTOS_ZERO_COPY,
                                                 &xClient, xClientLength );
-                    time_check = ARM_REG_DWT_CYCCNT - time_check;
-                    xTaskResumeAll();
+                    //time_check = ARM_REG_DWT_CYCCNT - time_check;
+                    //xTaskResumeAll();
                     FreeRTOS_debug_printf(("FreeRTOS_sendto: DELTA: %u\r\n", time_check));
 
                 #else
