@@ -46,6 +46,8 @@
 #include "FreeRTOS_IP.h"
 #include "FreeRTOS_Sockets.h"
 
+#define USE_TCP_ZERO_COPY 		     		1
+
 /* Remove the whole file if FreeRTOSIPConfig.h is set to exclude TCP. */
 #if( ipconfigUSE_TCP == 1 )
 
@@ -190,26 +192,85 @@ uint8_t *pucRxBuffer;
 			memset( pucRxBuffer, 0x00, ipconfigTCP_MSS );
 
 			/* Receive data on the socket. */
-			lBytes = FreeRTOS_recv( xConnectedSocket, pucRxBuffer, ipconfigTCP_MSS, 0 );
+            #if USE_TCP_ZERO_COPY
+
+                uint8_t *pucZeroCopyRxBuffPtr = NULL;
+                lBytes = FreeRTOS_recv( xConnectedSocket, &pucZeroCopyRxBuffPtr, ipconfigTCP_MSS, FREERTOS_ZERO_COPY );
+                if( pucZeroCopyRxBuffPtr != NULL )
+                {
+                    memcpy( pucRxBuffer, pucZeroCopyRxBuffPtr, lBytes );
+                    FreeRTOS_ReleaseTCPPayloadBuffer( xConnectedSocket, pucZeroCopyRxBuffPtr, lBytes );
+                }
+                else
+                {
+                    lBytes = -1;
+                }
+
+            #else
+
+                lBytes = FreeRTOS_recv( xConnectedSocket, pucRxBuffer, ipconfigTCP_MSS, 0 );
+
+            #endif /* USE_TCP_ZERO_COPY */
 
 			/* If data was received, echo it back. */
 			if( lBytes >= 0 )
 			{
-				lSent = 0;
-				lTotalSent = 0;
 
-				/* Call send() until all the data has been sent. */
-				while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
-				{
-					lSent = FreeRTOS_send( xConnectedSocket, pucRxBuffer, lBytes - lTotalSent, 0 );
-					lTotalSent += lSent;
-				}
+                lSent = 0;
+                lTotalSent = 0;
+                
+                #if USE_TCP_ZERO_COPY
 
-				if( lSent < 0 )
-				{
-					/* Socket closed? */
-					break;
-				}
+                    while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+                    {
+
+                        BaseType_t xAvlSpace = 0;
+                        BaseType_t xBytesToSend = 0;
+                        uint8_t *pucTCPZeroCopyStrmBuffer = FreeRTOS_get_tx_head( xConnectedSocket, &xAvlSpace );
+
+                        if(pucTCPZeroCopyStrmBuffer)
+                        {
+                            if((lBytes - lTotalSent) > xAvlSpace)
+                            {
+                                xBytesToSend = xAvlSpace;
+                            }
+                            else
+                            {
+                                xBytesToSend = (lBytes - lTotalSent);
+                            }
+                            memcpy(pucTCPZeroCopyStrmBuffer, ( void * ) (( (uint8_t *) pucRxBuffer ) + lTotalSent),  xBytesToSend);
+                        }
+                        else
+                        {
+                            break;
+                        }
+
+                        lSent = FreeRTOS_send( xConnectedSocket, NULL, xBytesToSend, 0 );
+                        lTotalSent += lSent;
+                    }
+
+                    if( lSent < 0 )
+                    {
+                        /* Socket closed? */
+                        break;
+                    }
+
+                #else
+
+                    /* Call send() until all the data has been sent. */
+                    while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
+                    {
+                        lSent = FreeRTOS_send( xConnectedSocket, pucRxBuffer, lBytes - lTotalSent, 0 );
+                        lTotalSent += lSent;
+                    }
+
+                    if( lSent < 0 )
+                    {
+                        /* Socket closed? */
+                        break;
+                    }
+
+                #endif
 			}
 			else
 			{
