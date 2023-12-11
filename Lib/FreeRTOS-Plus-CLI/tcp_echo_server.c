@@ -227,6 +227,7 @@ uint8_t *pucRxBuffer;
 
                         BaseType_t xAvlSpace = 0;
                         BaseType_t xBytesToSend = 0;
+                        /* Get the stream buffer */
                         uint8_t *pucTCPZeroCopyStrmBuffer = FreeRTOS_get_tx_head( xConnectedSocket, &xAvlSpace );
 
                         if(pucTCPZeroCopyStrmBuffer)
@@ -246,6 +247,7 @@ uint8_t *pucRxBuffer;
                             break;
                         }
 
+                        /* Sent using zero copy, NOTE: buffer is NULL */
                         lSent = FreeRTOS_send( xConnectedSocket, NULL, xBytesToSend, 0 );
                         lTotalSent += lSent;
                     }
