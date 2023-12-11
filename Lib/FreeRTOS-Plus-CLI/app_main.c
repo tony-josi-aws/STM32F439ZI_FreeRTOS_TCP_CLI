@@ -76,7 +76,9 @@
 
 #define USE_TCP_ECHO_CLIENT                 0
 
-#define USE_UDP_ECHO_SERVER                 1
+#define USE_UDP_ECHO_SERVER                 0
+
+#define USE_TCP_ECHO_SERVER                 1
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -1398,6 +1400,11 @@ static void network_up_status_thread_fn(void *io_params) {
                 #if USE_UDP_ECHO_SERVER
                     xTaskCreate( prvSimpleServerTask, "SimpCpySrvr", 2048, UDP_ECHO_PORT, tskIDLE_PRIORITY, NULL );
                 #endif /* USE_UDP_ECHO_SERVER */
+
+                #if USE_TCP_ECHO_SERVER
+                    extern void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority );
+                    vStartSimpleTCPServerTasks(mainCLI_TASK_STACK_SIZE, mainCLI_TASK_PRIORITY);
+                #endif /* USE_TCP_ECHO_SERVER */
 
                 network_up = 1;
                 xTaskNotifyGive( network_up_task_handle );
