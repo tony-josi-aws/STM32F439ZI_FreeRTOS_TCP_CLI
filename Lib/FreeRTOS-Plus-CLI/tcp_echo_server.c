@@ -46,6 +46,7 @@
 #include "FreeRTOS_IP.h"
 #include "FreeRTOS_Sockets.h"
 
+/* Enable to use TCP zero copy interface for echo server */
 #define USE_TCP_ZERO_COPY 		     		1
 
 /* Remove the whole file if FreeRTOSIPConfig.h is set to exclude TCP. */
