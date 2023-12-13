@@ -74,11 +74,11 @@
 
 #define USE_USER_COMMAND_TASK               0
 
-#define USE_TCP_ECHO_CLIENT                 0
+#define USE_TCP_ECHO_CLIENT                 1
 
 #define USE_UDP_ECHO_SERVER                 0
 
-#define USE_TCP_ECHO_SERVER                 1
+#define USE_TCP_ECHO_SERVER                 0
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
