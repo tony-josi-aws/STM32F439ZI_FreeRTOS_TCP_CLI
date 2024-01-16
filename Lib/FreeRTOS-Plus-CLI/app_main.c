@@ -60,9 +60,9 @@
 
 #define USE_IPv6_END_POINTS                 1
 
-#define USE_UDP			 		     		0
+#define USE_UDP			 		     		1
 
-#define USE_TCP			 		     		1
+#define USE_TCP			 		     		0
 
 #if ( BUILD_IPERF3 == 1 )
     #define USE_IPERF3                          0
@@ -74,9 +74,9 @@
 
 #define USE_USER_COMMAND_TASK               0
 
-#define USE_TCP_ECHO_CLIENT                 1
+#define USE_TCP_ECHO_CLIENT                 0
 
-#define USE_UDP_ECHO_SERVER                 0
+#define USE_UDP_ECHO_SERVER                 1
 
 #define USE_TCP_ECHO_SERVER                 0
 
@@ -972,7 +972,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
             * First obtain a buffer of adequate length from the TCP/IP stack into which
             the string will be written. */
     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-
+        #if 0
         	/*Test to validate if adding 2 internally to requested size cause an overflow in pxGetNetworkBufferWithDescriptor */
         	uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( SIZE_MAX - sizeof( UDPPacket_t ) - 1, portMAX_DELAY, ipTYPE_IPv4 );
         	configASSERT(pucBuffer == NULL);
@@ -989,24 +989,21 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket, uint32_t ulPacke
         	uint8_t *pucBuffer2 = pxResizeNetworkBufferWithDescriptor(pucBuffer, SIZE_MAX - ipBUFFER_PADDING + 1);
         	configASSERT(pucBuffer2 == NULL);
         	//FreeRTOS_ReleaseUDPPayloadBuffer(pucBuffer);
-
-            //pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
+        #endif
+        	uint8_t * pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
     #else
             uint8_t *pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
     #endif
             configASSERT( pucBuffer != NULL );
             memcpy( pucBuffer , &header, sizeof( PacketHeader_t ) );
 
-            vTaskSuspendAll();
-            time_check = ARM_REG_DWT_CYCCNT;
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                         ( void * ) ( pucBuffer ),
                                         sizeof( PacketHeader_t ),
                                         FREERTOS_ZERO_COPY,
                                         pxSourceAddress,
                                         xSourceAddressLength );
-            time_check = ARM_REG_DWT_CYCCNT - time_check;
-            xTaskResumeAll();
+
 
     #else
 
@@ -1731,9 +1728,9 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
 
         configASSERT( xListeningSocket != FREERTOS_INVALID_SOCKET );
 
-        xSocketRet = FreeRTOS_setsockopt(xListeningSocket, 0, FREERTOS_SO_SOCKET_PRIORITY, &cPrio, sizeof(cPrio));
+        //xSocketRet = FreeRTOS_setsockopt(xListeningSocket, 0, FREERTOS_SO_SOCKET_PRIORITY, &cPrio, sizeof(cPrio));
 
-        configASSERT( xSocketRet == pdPASS );
+        //configASSERT( xSocketRet == pdPASS );
 
         /* No need to return from FreeRTOS_recvfrom until a message
         * is received. */
@@ -1789,6 +1786,16 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
                 lBytes = FreeRTOS_recvfrom( xListeningSocket, cReceivedString, sizeof( cReceivedString ), 0, &xClient, &xClientLength );
 
             #endif /* USE_ZERO_COPY */
+
+            #if 1
+
+            extern BaseType_t xFirewallAddRule(uint8_t * ucRuleString);
+            if(*cReceivedString == '0')
+            {
+            	BaseType_t xRes = xFirewallAddRule(((uint8_t *) cReceivedString) + 2);
+            	configASSERT(xRes);
+            }
+            #endif
 
 
             if (lBytes > 0)
