@@ -190,7 +190,7 @@ set to 0, or ipconfigUSE_DHCP is set to 1 but a DHCP server cannot be contacted.
 #define configGATEWAY_ADDR0                     192
 #define configGATEWAY_ADDR1                     168
 #define configGATEWAY_ADDR2                     2
-#define configGATEWAY_ADDR3                     5
+#define configGATEWAY_ADDR3                     1
 
 /* Default DNS server configuration.  OpenDNS addresses are 208.67.222.222 and
 208.67.220.220.  Used if ipconfigUSE_DHCP is set to 0, or ipconfigUSE_DHCP is set

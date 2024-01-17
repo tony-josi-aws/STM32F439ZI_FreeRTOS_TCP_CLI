@@ -259,7 +259,7 @@ void app_main( void )
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
                     /* End-point 0 wants to use DHCPv4. */
-                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE; // pdFALSE; // pdTRUE;
                 }
                 #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
@@ -1790,9 +1790,22 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
             #if 1
 
             extern BaseType_t xFirewallAddRule(uint8_t * ucRuleString);
+            extern BaseType_t xFirewallListRules(uint8_t * ucResult, uint32_t uxBufferLength);
+            extern BaseType_t xFirewallRemoveRule(uint32_t uxRuleID);
             if(*cReceivedString == '0')
             {
             	BaseType_t xRes = xFirewallAddRule(((uint8_t *) cReceivedString) + 2);
+            	configASSERT(xRes);
+            }
+            else if(*cReceivedString == '/')
+            {
+            	BaseType_t xRes = xFirewallListRules(cReceivedString, 512);
+            	configASSERT(xRes);
+            	lBytes = strlen(cReceivedString);
+            }
+            else if(*cReceivedString == '[')
+            {
+            	BaseType_t xRes = xFirewallRemoveRule((uint32_t) atoi(((uint8_t *)cReceivedString) + 2));
             	configASSERT(xRes);
             }
             #endif
