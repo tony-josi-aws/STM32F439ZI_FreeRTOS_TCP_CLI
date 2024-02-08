@@ -78,6 +78,7 @@
 #define configUSE_RECURSIVE_MUTEXES               1
 #define configUSE_COUNTING_SEMAPHORES             1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION   0
+#define configENABLE_HEAP_PROTECTOR    			  1
 /* USER CODE BEGIN MESSAGE_BUFFER_LENGTH_TYPE */
 /* Defaults to size_t for backward compatibility, but can be changed
    if lengths will always be less than the number of bytes in a size_t. */
@@ -221,7 +222,7 @@ extern void vPrintStringToUart( const char *str );
 
 #define configPRINTF( x )                       vLoggingPrintf x
 #define configPRINT_STRING( x )                 vPrintStringToUart( x )
-#define configLOGGING_MAX_MESSAGE_LENGTH        128
+#define configLOGGING_MAX_MESSAGE_LENGTH        1024
 
 /* Pcap capture configuration. */
 #define configPCAP_CAPTURE_BUFFER_LENGTH        ( 10 * 1024 )
