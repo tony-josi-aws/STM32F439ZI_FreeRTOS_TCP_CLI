@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
 #define USE_UDP			 		     		0
 
@@ -74,11 +74,13 @@
 
 #define USE_USER_COMMAND_TASK               0
 
-#define USE_TCP_ECHO_CLIENT                 1
+#define USE_TCP_ECHO_CLIENT                 0
 
 #define USE_UDP_ECHO_SERVER                 0
 
 #define USE_TCP_ECHO_SERVER                 0
+
+#define USE_CORE_HTTP_DEMO					0
 
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
     #define TOTAL_ENDPOINTS                 3
@@ -1406,6 +1408,12 @@ static void network_up_status_thread_fn(void *io_params) {
                     vStartSimpleTCPServerTasks(mainCLI_TASK_STACK_SIZE, mainCLI_TASK_PRIORITY);
                 #endif /* USE_TCP_ECHO_SERVER */
 
+                #if USE_CORE_HTTP_DEMO
+                    extern void vStartSimpleHTTPDemo( void );
+                    vStartSimpleHTTPDemo();
+                #endif /* USE_CORE_HTTP_DEMO */    
+
+
                 network_up = 1;
                 xTaskNotifyGive( network_up_task_handle );
 
@@ -1834,3 +1842,9 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
         }
     }
 #endif /* USE_UDP_ECHO_SERVER */
+
+    void vApplicationGetRandomHeapCanary(portPOINTER_SIZE_TYPE* pxHeapCanary ) {
+    	if (pxHeapCanary != NULL) {
+    		xApplicationGetRandomNumber(pxHeapCanary);
+    	}
+    }
