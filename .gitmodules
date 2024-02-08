@@ -7,3 +7,6 @@
 [submodule "Lib/coreHTTP"]
 	path = Lib/coreHTTP
 	url = git@github.com:FreeRTOS/coreHTTP.git
+[submodule "Lib/backoffAlgorithm"]
+	path = Lib/backoffAlgorithm
+	url = git@github.com:FreeRTOS/backoffAlgorithm.git
