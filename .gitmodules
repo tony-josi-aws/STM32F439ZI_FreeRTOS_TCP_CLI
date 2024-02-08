@@ -4,3 +4,6 @@
 [submodule "Lib/FreeRTOS-Plus-TCP"]
 	path = Lib/FreeRTOS-Plus-TCP
 	url = git@github.com:tony-josi-aws/FreeRTOS-Plus-TCP.git
+[submodule "Lib/coreHTTP"]
+	path = Lib/coreHTTP
+	url = git@github.com:FreeRTOS/coreHTTP.git
