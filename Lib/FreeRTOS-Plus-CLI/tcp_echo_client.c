@@ -58,7 +58,7 @@
 
 	#define echoNUM_ECHO_CLIENTS				1
 	#define echoTCP_ECHO_SERVER_PORT			5050
-	#define echoTCP_ECHO_SERVER_ADDR_STRING     "192.168.0.149"
+	#define echoTCP_ECHO_SERVER_ADDR_STRING     "192.168.0.105"
 
 /* The echo tasks create a socket, send out a number of echo requests, listen
  * for the echo reply, then close the socket again before starting over.  This

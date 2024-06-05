@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 0
+#define USE_IPv6_END_POINTS                 1
 
 #define USE_UDP			 		     		1
 
@@ -72,13 +72,13 @@
 
 #define USE_TCP_ZERO_COPY 		     		1
 
-#define USE_USER_COMMAND_TASK               0
+#define USE_USER_COMMAND_TASK               1
 
-#define USE_TCP_ECHO_CLIENT                 0
+#define USE_TCP_ECHO_CLIENT                 1
 
 #define USE_UDP_ECHO_SERVER                 0
 
-#define USE_TCP_ECHO_SERVER                 0
+#define USE_TCP_ECHO_SERVER                 1
 
 #define USE_CORE_HTTP_DEMO					0
 
@@ -242,12 +242,12 @@ void app_main( void )
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
-	#if ( ipconfigMULTI_INTERFACE == 1 ) && ( ipconfigCOMPATIBLE_WITH_SINGLE == 0 )
+
     	static NetworkInterface_t xInterfaces[1];
     	static NetworkEndPoint_t xEndPoints[4];
-	#endif
+
     //FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
-	memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
+
 
 	/* Initialize the network interface.*/
     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
@@ -261,7 +261,7 @@ void app_main( void )
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
                     /* End-point 0 wants to use DHCPv4. */
-                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE; // pdFALSE; // pdTRUE;
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
                 }
                 #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
@@ -349,6 +349,7 @@ void app_main( void )
     #else
         /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
         FreeRTOS_debug_printf(("FreeRTOS_IPInit\r\n"));
+        memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
         FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
     #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
