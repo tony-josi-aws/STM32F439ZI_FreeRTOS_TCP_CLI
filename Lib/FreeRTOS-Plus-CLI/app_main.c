@@ -74,11 +74,11 @@
 
 #define USE_USER_COMMAND_TASK               1
 
-#define USE_TCP_ECHO_CLIENT                 1
+#define USE_TCP_ECHO_CLIENT                 0
 
 #define USE_UDP_ECHO_SERVER                 0
 
-#define USE_TCP_ECHO_SERVER                 1
+#define USE_TCP_ECHO_SERVER                 0
 
 #define USE_CORE_HTTP_DEMO					0
 

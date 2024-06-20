@@ -172,6 +172,8 @@ void prvServerWorkTask( void * pvArgument )
     xServerSemaphore = xSemaphoreCreateBinary();
     configASSERT( xServerSemaphore != NULL );
 
+    //FreeRTOS_SetDNSIPPreference(xPreferenceIPv6);
+
     /* pcap_prepare(); */
 
     /* Wait for all end-points to come up.
