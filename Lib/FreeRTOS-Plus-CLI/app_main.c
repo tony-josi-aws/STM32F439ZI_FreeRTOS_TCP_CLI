@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 0
+#define USE_IPv6_END_POINTS                 1
 
 #define USE_UDP			 		     		1
 
