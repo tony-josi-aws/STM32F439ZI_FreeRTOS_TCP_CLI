@@ -46,6 +46,8 @@ extern "C" {
 
 #define ipconfigUSE_IPv6 1
 
+#define ipconfigIPv4_BACKWARD_COMPATIBLE 0
+
 #define ipconfigUSE_RMII 1
 
 #define BUILD_IPERF3	 0

@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_IPv6_END_POINTS                 0
 
 #define USE_UDP			 		     		1
 
@@ -242,10 +242,10 @@ void app_main( void )
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
-
+#if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
     	static NetworkInterface_t xInterfaces[1];
     	static NetworkEndPoint_t xEndPoints[4];
-
+#endif /* #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
     //FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
 
 
@@ -349,7 +349,7 @@ void app_main( void )
     #else
         /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
         FreeRTOS_debug_printf(("FreeRTOS_IPInit\r\n"));
-        memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
+        //memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
         FreeRTOS_IPInit(ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
     #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
@@ -1445,7 +1445,7 @@ static void network_up_status_thread_fn(void *io_params) {
             FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
             configPRINTF( ( "Gateway Address: %s\n", cBuffer ) );
 
-            FreeRTOS_inet_ntoa( ulDNxzaSServerAddress, cBuffer );
+            FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
             configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
         
         #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
