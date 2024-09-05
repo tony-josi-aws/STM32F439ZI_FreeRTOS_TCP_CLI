@@ -43,6 +43,7 @@
 #define LED_HW 					      0
 #define NOTIFICATION_TIMING			  0
 #define TCP_CLI					      1
+#define ENABLE_CYCLE_COUNT    		  1
 
 /* USER CODE END PM */
 
@@ -103,6 +104,24 @@ static void task_2_thread_fn(void *io_params) {
 
 #endif /* NOTIFICATION_TIMING */
 
+#if ENABLE_CYCLE_COUNT
+
+void vInitCycleCountModule()
+{
+
+   /* Details about the registers and their values
+    * can be obtained from ARM CoreSight Architecture
+    * Specification document. */
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  /* DWT->LAR = 0xC5ACCE55; Only required for Cortex M7 and others - ARM CoreSight Architecture Specification */
+  DWT->CYCCNT = 0;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+}
+
+#endif /* ENABLE_CYCLE_COUNT */
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -154,6 +173,16 @@ int main(void)
   MX_RNG_Init();
 
   /* USER CODE BEGIN 2 */
+
+#if ENABLE_CYCLE_COUNT
+
+  vInitCycleCountModule();
+
+  /* Now it should be possible to use
+   * DWT->CYCCNT to get the cycle count. */
+
+#endif /* ENABLE_CYCLE_COUNT */
+
 
 #if ( configUSE_TRACE_FACILITY == 1)
 
