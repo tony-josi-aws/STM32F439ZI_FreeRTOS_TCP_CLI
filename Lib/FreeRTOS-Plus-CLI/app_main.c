@@ -58,7 +58,11 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_IPv6_END_POINTS                 1
+#define USE_LOOPBACK_INTERFACE       		1
+
+#define mainCREATE_TCP_LOOPBACK_TASK_SINGLE 1
+
+#define USE_IPv6_END_POINTS                 0
 
 #define USE_UDP			 		     		1
 
@@ -72,7 +76,7 @@
 
 #define USE_TCP_ZERO_COPY 		     		1
 
-#define USE_USER_COMMAND_TASK               1
+#define USE_USER_COMMAND_TASK               0
 
 #define USE_TCP_ECHO_CLIENT                 0
 
@@ -82,16 +86,33 @@
 
 #define USE_CORE_HTTP_DEMO					0
 
+/* The standard echo port number. */
+#define tcpechoPORT_NUMBER		            7
+
 #if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
-    #define TOTAL_ENDPOINTS                 3
+    #define TOTAL_ENDPOINTS                 (3 + 1)
 #elif ( ipconfigUSE_IPv4 == 0 && ipconfigUSE_IPv6 != 0 )
-    #define TOTAL_ENDPOINTS                 2
+    #define TOTAL_ENDPOINTS                 (2 + 1)
 #else
-    #define TOTAL_ENDPOINTS                 1
+    #define TOTAL_ENDPOINTS                 (1 + 1)
 #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
 
+#if USE_LOOPBACK_INTERFACE
+    #define  TOTAL_INTERFACES                   ( 2 )
+#else
+    #define  TOTAL_INTERFACES                   ( 1 )
+#endif
+
 #define UDP_ECHO_PORT                       5005
-static void prvSimpleServerTask( void *pvParameters );
+
+
+#if (mainCREATE_TCP_LOOPBACK_TASK_SINGLE == 1 && USE_LOOPBACK_INTERFACE == 1) 
+    struct freertos_sockaddr xParamsLoopBackServerAddr;
+#endif
+
+#if USE_TCP_ECHO_SERVER
+    struct freertos_sockaddr xParamsTCPEchoServerAddr = {0};
+#endif
 
 /*-----------------------------------------------------------*/
 /*-----------------------------------------------------------*/
@@ -224,10 +245,6 @@ uint32_t time_check = 0;
 void app_main( void )
 {
     BaseType_t xRet;
-    const uint8_t ucIPAddress[ 4 ] = { configIP_ADDR0, configIP_ADDR1, configIP_ADDR2, configIP_ADDR3 };
-    const uint8_t ucNetMask[ 4 ] = { configNET_MASK0, configNET_MASK1, configNET_MASK2, configNET_MASK3 };
-    const uint8_t ucGatewayAddress[ 4 ] = { configGATEWAY_ADDR0, configGATEWAY_ADDR1, configGATEWAY_ADDR2, configGATEWAY_ADDR3 };
-    const uint8_t ucDNSServerAddress[ 4 ] = { configDNS_SERVER_ADDR0, configDNS_SERVER_ADDR1, configDNS_SERVER_ADDR2, configDNS_SERVER_ADDR3 };
 
     prvConfigureMPU();
 
@@ -243,8 +260,8 @@ void app_main( void )
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
 #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
-    	static NetworkInterface_t xInterfaces[1];
-    	static NetworkEndPoint_t xEndPoints[4];
+    	static NetworkInterface_t xInterfaces[TOTAL_INTERFACES];
+    	static NetworkEndPoint_t xEndPoints[TOTAL_ENDPOINTS];
 #endif /* #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
     //FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
 
@@ -256,7 +273,15 @@ void app_main( void )
 
         /* === End-point 0 === */
         #if ( ipconfigUSE_IPv4 != 0 )
+            /* === End-point 0 === */
             {
+
+                const uint8_t ucIPAddress[ 4 ] = { configIP_ADDR0, configIP_ADDR1, configIP_ADDR2, configIP_ADDR3 };
+                const uint8_t ucNetMask[ 4 ] = { configNET_MASK0, configNET_MASK1, configNET_MASK2, configNET_MASK3 };
+                const uint8_t ucGatewayAddress[ 4 ] = { configGATEWAY_ADDR0, configGATEWAY_ADDR1, configGATEWAY_ADDR2, configGATEWAY_ADDR3 };
+                const uint8_t ucDNSServerAddress[ 4 ] = { configDNS_SERVER_ADDR0, configDNS_SERVER_ADDR1, configDNS_SERVER_ADDR2, configDNS_SERVER_ADDR3 };
+                const uint8_t ucMACAddress[ 6 ] = { configMAC_ADDR0, configMAC_ADDR1, configMAC_ADDR2, configMAC_ADDR3, configMAC_ADDR4, configMAC_ADDR5 };
+
                 FreeRTOS_FillEndPoint(&(xInterfaces[0]), &(xEndPoints[xEndPointCount]), ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
@@ -267,6 +292,28 @@ void app_main( void )
 
                 xEndPointCount += 1;
             }
+
+            /* === End-point 1 Loopback === */
+            #if USE_LOOPBACK_INTERFACE
+            {
+
+                const uint8_t ucLoopbackIPAddress[ 4 ] = { 127, 0 , 0 , 1 };
+                const uint8_t ucLoopbackNetMask[ 4 ] = { 255, 0, 0, 0 };
+                const uint8_t ucLoopbackGatewayAddress[ 4 ] = { 0, 0, 0, 0 };
+                const uint8_t ucLoopbackDNSServerAddress[ 4 ] = { 0, 0, 0, 0 };
+                const uint8_t ucLoopbackMACAddress[ 6 ] = { configMAC_ADDR0, configMAC_ADDR1, configMAC_ADDR2, configMAC_ADDR3, configMAC_ADDR4, configMAC_ADDR5 };
+
+                extern NetworkInterface_t * pxLoopback_FillInterfaceDescriptor(BaseType_t xEMACIndex,
+                                                         NetworkInterface_t * pxInterface );
+
+                pxLoopback_FillInterfaceDescriptor(0, &(xInterfaces[1]));
+                //xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE;
+                FreeRTOS_FillEndPoint(&(xInterfaces[1]), &(xEndPoints[xEndPointCount]), ucLoopbackIPAddress, ucLoopbackNetMask, ucLoopbackGatewayAddress, ucLoopbackDNSServerAddress, ucLoopbackMACAddress);
+                
+                xEndPointCount += 1;
+            }
+            #endif /* USE_LOOPBACK_INTERFACE */
+
         #endif /* ( ipconfigUSE_IPv4 != 0 ) */
 
         /*
@@ -1327,10 +1374,8 @@ static void network_up_status_thread_fn(void *io_params) {
     /* If the network has just come up...*/
     if( eNetworkEvent == eNetworkUp )
     {
-        uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
-        char cBuffer[ 16 ];
 
-        xUpEndPointCount += 1;
+    	xUpEndPointCount += 1;
 
         if( xUpEndPointCount >= TOTAL_ENDPOINTS )
         {
@@ -1342,6 +1387,22 @@ static void network_up_status_thread_fn(void *io_params) {
                 xTasksAlreadyCreated = pdTRUE;
 
                 #if ( ipconfigUSE_IPv4 != 0 )
+
+
+                    #if (mainCREATE_TCP_LOOPBACK_TASK_SINGLE == 1 && USE_LOOPBACK_INTERFACE == 1) 
+                    {
+                        BaseType_t rc = FreeRTOS_inet_pton( FREERTOS_AF_INET, "127.0.0.1", ( void * ) &(xParamsLoopBackServerAddr.sin_address.ulIP_IPv4) );
+                        configASSERT( rc == pdPASS );
+                        xParamsLoopBackServerAddr.sin_port = FreeRTOS_htons(tcpechoPORT_NUMBER);
+	                    xParamsLoopBackServerAddr.sin_family = FREERTOS_AF_INET;
+                    
+                        extern void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority, struct freertos_sockaddr *pxParams );
+                        vStartSimpleTCPServerTasks(mainCLI_TASK_STACK_SIZE * 4, mainCLI_TASK_PRIORITY, &xParamsLoopBackServerAddr);
+
+                        extern void vStartTCPEchoClientTasks_SingleTasks( uint16_t usTaskStackSize, UBaseType_t uxTaskPriority );
+                        vStartTCPEchoClientTasks_SingleTasks(mainCLI_TASK_STACK_SIZE * 4, mainCLI_TASK_PRIORITY);
+                    }
+                    #endif
 
                     #if USE_UDP
                     
@@ -1401,12 +1462,18 @@ static void network_up_status_thread_fn(void *io_params) {
 
 
                 #if USE_UDP_ECHO_SERVER
+                    extern static void prvSimpleServerTask( void *pvParameters );
                     xTaskCreate( prvSimpleServerTask, "SimpCpySrvr", 2048, UDP_ECHO_PORT, tskIDLE_PRIORITY, NULL );
                 #endif /* USE_UDP_ECHO_SERVER */
 
                 #if USE_TCP_ECHO_SERVER
-                    extern void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority );
-                    vStartSimpleTCPServerTasks(mainCLI_TASK_STACK_SIZE, mainCLI_TASK_PRIORITY);
+                {
+                    xParamsTCPEchoServerAddr.sin_port = FreeRTOS_htons(tcpechoPORT_NUMBER);
+                    xParamsTCPEchoServerAddr.sin_family = FREERTOS_AF_INET;
+                    
+                    extern void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority, struct freertos_sockaddr *pxParams );
+                    vStartSimpleTCPServerTasks(mainCLI_TASK_STACK_SIZE, mainCLI_TASK_PRIORITY, &xParamsTCPEchoServerAddr);
+                }
                 #endif /* USE_TCP_ECHO_SERVER */
 
                 #if USE_CORE_HTTP_DEMO
@@ -1427,7 +1494,10 @@ static void network_up_status_thread_fn(void *io_params) {
             showEndPoint( pxEndPoint );
         
         #else
-        
+        {
+            uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
+            char cBuffer[ 16 ];
+
             /* Print out the network configuration, which may have come from a DHCP
             * server. */
             #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
@@ -1447,7 +1517,7 @@ static void network_up_status_thread_fn(void *io_params) {
 
             FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
             configPRINTF( ( "DNS Server Address: %s\n", cBuffer ) );
-        
+        }
         #endif /* defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
 
     }
