@@ -42,15 +42,19 @@ extern "C" {
 
 #include "stm32f4xx_hal.h"
 
+#define ipconfigUSE_LOOPBACK	1
+
 #define ipconfigUSE_IPv4 1
 
-#define ipconfigUSE_IPv6 1
+#define ipconfigUSE_IPv6 0
 
 #define ipconfigIPv4_BACKWARD_COMPATIBLE 0
 
 #define ipconfigUSE_RMII 1
 
 #define BUILD_IPERF3	 0
+
+#define ipconfigSUPPORT_NETWORK_DOWN_EVENT ( 1 )
 
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
 on).  Valid options are pdFREERTOS_BIG_ENDIAN and pdFREERTOS_LITTLE_ENDIAN. */
