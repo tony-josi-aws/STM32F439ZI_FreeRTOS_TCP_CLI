@@ -47,16 +47,13 @@
 #include "FreeRTOS_Sockets.h"
 
 /* Enable to use TCP zero copy interface for echo server */
-#define USE_TCP_ZERO_COPY 		     		1
+#define USE_TCP_ZERO_COPY 		     		0
 
 /* Remove the whole file if FreeRTOSIPConfig.h is set to exclude TCP. */
 #if( ipconfigUSE_TCP == 1 )
 
 /* The maximum time to wait for a closing socket to close. */
 #define tcpechoSHUTDOWN_DELAY	( pdMS_TO_TICKS( 5000 ) )
-
-/* The standard echo port number. */
-#define tcpechoPORT_NUMBER		7
 
 /* If ipconfigUSE_TCP_WIN is 1 then the Tx sockets will use a buffer size set by
 ipconfigTCP_TX_BUFFER_LENGTH, and the Tx window size will be
@@ -99,10 +96,10 @@ static uint16_t usUsedStackSize = 0;
 
 /*-----------------------------------------------------------*/
 
-void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority )
+void vStartSimpleTCPServerTasks( uint16_t usStackSize, UBaseType_t uxPriority, struct freertos_sockaddr *pxParams )
 {
 	/* Create the TCP echo server. */
-	xTaskCreate( prvConnectionListeningTask, "ServerListener", usStackSize, NULL, uxPriority + 1, NULL );
+	xTaskCreate( prvConnectionListeningTask, "ServerListener", usStackSize, pxParams, uxPriority, NULL );
 
 	/* Remember the requested stack size so it can be re-used by the server
 	listening task when it creates tasks to handle connections. */
@@ -117,6 +114,7 @@ Socket_t xListeningSocket, xConnectedSocket;
 socklen_t xSize = sizeof( xClient );
 static const TickType_t xReceiveTimeOut = portMAX_DELAY;
 const BaseType_t xBacklog = 20;
+struct freertos_sockaddr *pxParamsSocket;
 
 #if( ipconfigUSE_TCP_WIN == 1 )
 	WinProperties_t xWinProps;
@@ -128,8 +126,7 @@ const BaseType_t xBacklog = 20;
 	xWinProps.lRxWinSize = configECHO_SERVER_RX_WINDOW_SIZE;
 #endif /* ipconfigUSE_TCP_WIN */
 
-	/* Just to prevent compiler warnings. */
-	( void ) pvParameters;
+	pxParamsSocket =  (struct freertos_sockaddr *) pvParameters;
 
 	/* Attempt to open the socket. */
 	xListeningSocket = FreeRTOS_socket( FREERTOS_AF_INET, FREERTOS_SOCK_STREAM, FREERTOS_IPPROTO_TCP );
@@ -147,9 +144,9 @@ const BaseType_t xBacklog = 20;
 
 	/* Bind the socket to the port that the client task will send to, then
 	listen for incoming connections. */
-	xBindAddress.sin_port = tcpechoPORT_NUMBER;
-	xBindAddress.sin_port = FreeRTOS_htons( xBindAddress.sin_port );
-	xBindAddress.sin_family = FREERTOS_AF_INET;
+	xBindAddress.sin_address.ulIP_IPv4 = pxParamsSocket->sin_address.ulIP_IPv4;
+	xBindAddress.sin_port = pxParamsSocket->sin_port;
+	xBindAddress.sin_family = pxParamsSocket->sin_family;
 	FreeRTOS_bind( xListeningSocket, &xBindAddress, sizeof( xBindAddress ) );
 	FreeRTOS_listen( xListeningSocket, xBacklog );
 

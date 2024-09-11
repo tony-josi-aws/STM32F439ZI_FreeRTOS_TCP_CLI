@@ -57,8 +57,8 @@
 #if ( ipconfigUSE_TCP == 1 )
 
 	#define echoNUM_ECHO_CLIENTS				1
-	#define echoTCP_ECHO_SERVER_PORT			5050
-	#define echoTCP_ECHO_SERVER_ADDR_STRING     "192.168.0.105"
+	#define echoTCP_ECHO_SERVER_PORT			7
+	#define echoTCP_ECHO_SERVER_ADDR_STRING     "127.0.0.1"
 
 /* The echo tasks create a socket, send out a number of echo requests, listen
  * for the echo reply, then close the socket again before starting over.  This
@@ -274,7 +274,7 @@
             }
             else
             {
-                rc = FreeRTOS_inet_pton( FREERTOS_AF_INET4, echoTCP_ECHO_SERVER_ADDR_STRING, ( void * ) xEchoServerAddress.sin_address.xIP_IPv6.ucBytes );
+                rc = FreeRTOS_inet_pton( FREERTOS_AF_INET4, echoTCP_ECHO_SERVER_ADDR_STRING, ( void * ) &(xEchoServerAddress.sin_address.ulIP_IPv4) );
                 configASSERT( rc == pdPASS );
                 xFamily = FREERTOS_AF_INET4;
             }
