@@ -78,3 +78,7 @@ CPU Utilization: local/sender 1.2% (0.3%u/0.9%s), remote/receiver 0.0% (0.0%u/0.
 
 iperf Done.
 ```
+
+## Notes:
+
+TODO: When using loopback interface with TCP zero copy enabled only for TCP server heap is getting corrupted and the TCP segments are being run out. Most likely an application issue with how application is using the zero copy. Pending debug...
