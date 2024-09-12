@@ -1,29 +1,29 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
- * @file 
- * 
+ * @file
+ *
  * @brief Public trace ISR APIs.
  */
 
 #ifndef TRC_ISR_H
-#define TRC_ISR_H
+    #define TRC_ISR_H
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+    #if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+        #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#include <trcTypes.h>
+            #include <trcTypes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+            #ifdef __cplusplus
+            extern "C" {
+            #endif
 
 /**
  * @defgroup trace_isr_apis Trace ISR APIs
@@ -34,44 +34,44 @@ extern "C" {
 /**
  * @internal Trace ISR Core Data Structure
  */
-typedef struct TraceISRCoreData	/* Aligned */
-{
-	TraceISRHandle_t handleStack[TRC_CFG_MAX_ISR_NESTING];	/**< */
-	int32_t stackIndex;										/**< */
-	uint32_t isPendingContextSwitch;							/**< */
-} TraceISRCoreData_t;
+            typedef struct TraceISRCoreData                              /* Aligned */
+            {
+                TraceISRHandle_t handleStack[ TRC_CFG_MAX_ISR_NESTING ]; /**< */
+                int32_t stackIndex;                                      /**< */
+                uint32_t isPendingContextSwitch;                         /**< */
+            } TraceISRCoreData_t;
 
 /**
  * @internal Trace ISR Data Structure
  */
-typedef struct TraceISRData	/* Aligned */
-{
-	TraceISRCoreData_t cores[TRC_CFG_CORE_COUNT]; /* ISR handles */
-} TraceISRData_t;
+            typedef struct TraceISRData                         /* Aligned */
+            {
+                TraceISRCoreData_t cores[ TRC_CFG_CORE_COUNT ]; /* ISR handles */
+            } TraceISRData_t;
 
 /* We expose this to enable faster access */
-extern TraceISRData_t* pxTraceISRData;
+            extern TraceISRData_t * pxTraceISRData;
 
 /**
  * @internal Initialize ISR trace system.
- * 
+ *
  * @param[in] pxBuffer Pointer to memory that will be used by the ISR
  * trace system.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISRInitialize(TraceISRData_t *pxBuffer);
+            traceResult xTraceISRInitialize( TraceISRData_t * pxBuffer );
 
 /**
  * @brief Registers trace ISR.
- * 
+ *
  * This routine stores a name and priority level for an Interrupt Service Routine,
  * to allow for better visualization. Returns a TraceISRHandle_t used by
  * xTraceISRBegin/xTraceISREnd.
- * 
+ *
  * Example:
- * 	#define PRIO_OF_ISR_TIMER1 3 // the hardware priority of the interrupt
+ *  #define PRIO_OF_ISR_TIMER1 3 // the hardware priority of the interrupt
  *	TraceISRHandle_t xISRTimer1Handle = 0; // The ID set by the recorder
  *	...
  *	xTraceISRRegister("ISRTimer1", PRIO_OF_ISR_TIMER1, &xISRTimer1Handle);
@@ -82,135 +82,138 @@ traceResult xTraceISRInitialize(TraceISRData_t *pxBuffer);
  *		...
  *		xTraceISREnd(0);
  *	}
- * 
+ *
  * @param[in] szName Name.
  * @param[in] uiPriority Priority.
  * @param[out] pxISRHandle Pointer to uninitialized ISR trace handle.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISRRegister(const char* szName, uint32_t uiPriority, TraceISRHandle_t* pxISRHandle);
+            traceResult xTraceISRRegister( const char * szName,
+                                           uint32_t uiPriority,
+                                           TraceISRHandle_t * pxISRHandle );
 
 /**
  * @brief Registers the beginning of an Interrupt Service Routine.
- * 
+ *
  * This routine register the beginning of an ISR using a TraceISRHandle_t.
  * See xTraceISRRegister for and example of using ISR tracing.
- * 
+ *
  * @param[in] xISRHandle Pointer to initialized ISR trace handle.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISRBegin(TraceISRHandle_t xISRHandle);
+            traceResult xTraceISRBegin( TraceISRHandle_t xISRHandle );
 
 /**
  * @brief Registers the end of an Interrupt Service Routine.
- * 
+ *
  * This routine register the end of an ISR using a TraceISRHandle_t.
  * See xTraceISRRegister for and example of using ISR tracing.
- * 
+ *
  * The parameter uxIsTaskSwitchRequired indicates if the interrupt has requested
  * a task-switch (= 1), e.g., by signaling a semaphore. Otherwise (= 0) the
  * interrupt is assumed to return to the previous context.
- * 
+ *
  * @param[in] xIsTaskSwitchRequired Task switch required.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISREnd(TraceBaseType_t xIsTaskSwitchRequired);
+            traceResult xTraceISREnd( TraceBaseType_t xIsTaskSwitchRequired );
 
-#if ((TRC_CFG_USE_TRACE_ASSERT) == 1)
+            #if ( ( TRC_CFG_USE_TRACE_ASSERT ) == 1 )
 
 /**
  * @brief Gets current trace ISR nesting level.
- * 
+ *
  * This routine gets the current trace ISR nesting level for the
  * CPU on which it is called.
- * 
+ *
  * @param[out] puiValue Value.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISRGetCurrentNesting(int32_t* puiValue);
+                traceResult xTraceISRGetCurrentNesting( int32_t * puiValue );
 
 /**
- * @brief 
- * 
- * @return int32_t 
+ * @brief
+ *
+ * @return int32_t
  */
-int32_t xTraceISRGetCurrentNestingReturned(void);
+                int32_t xTraceISRGetCurrentNestingReturned( void );
 
 /**
  * @brief Gets current ISR trace handle.
- * 
+ *
  * @param[out] pxISRHandle ISR Handle.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceISRGetCurrent(TraceISRHandle_t* pxISRHandle);
+                traceResult xTraceISRGetCurrent( TraceISRHandle_t * pxISRHandle );
 
-#else /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
+            #else /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
 
 /**
  * @brief Gets current trace ISR nesting level.
- * 
+ *
  * This routine gets the current trace ISR nesting level for the
  * CPU on which it is called.
- * 
+ *
  * @param[out] puiValue Value.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-#define xTraceISRGetCurrentNesting(puiValue) TRC_COMMA_EXPR_TO_STATEMENT_EXPR_2(*(puiValue) = pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()].stackIndex, TRC_SUCCESS)
+                #define xTraceISRGetCurrentNesting( puiValue )    TRC_COMMA_EXPR_TO_STATEMENT_EXPR_2( *( puiValue ) = pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ].stackIndex, TRC_SUCCESS )
 
 /**
- * @brief 
- * 
- * @return int32_t 
+ * @brief
+ *
+ * @return int32_t
  */
-#define xTraceISRGetCurrentNestingReturned() (pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()].stackIndex)
+                #define xTraceISRGetCurrentNestingReturned()      ( pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ].stackIndex )
 
 /**
  * @brief Gets current trace ISR nesting level.
- * 
+ *
  * This routine gets the current trace ISR nesting level for the
  * CPU on which it is called.
- * 
+ *
  * @param[out] puiValue Value.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-#define xTraceISRGetCurrent(pxISRHandle) (xTraceISRGetCurrentNestingReturned() >= 0 ? (*(pxISRHandle) = pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()].handleStack[xTraceISRGetCurrentNestingReturned()], TRC_SUCCESS) : TRC_FAIL)
+                #define xTraceISRGetCurrent( pxISRHandle )        ( xTraceISRGetCurrentNestingReturned() >= 0 ? ( *( pxISRHandle ) = pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ].handleStack[ xTraceISRGetCurrentNestingReturned() ], TRC_SUCCESS ) : TRC_FAIL )
 
-#endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
-
-/** @internal Deprecated - Provides backwards-compability with older recorders for now, will be removed in the future */
-TraceISRHandle_t xTraceSetISRProperties(const char* szName, uint32_t uiPriority);
+            #endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
 
 /** @internal Deprecated - Provides backwards-compability with older recorders for now, will be removed in the future */
-#define xTraceGetCurrentISRNesting(puiValue) xTraceISRGetCurrentNesting(puiValue)
+            TraceISRHandle_t xTraceSetISRProperties( const char * szName,
+                                                     uint32_t uiPriority );
 
 /** @internal Deprecated - Provides backwards-compability with older recorders for now, will be removed in the future */
-#define vTraceStoreISRBegin(xISRHandle) xTraceISRBegin(xISRHandle)
+            #define xTraceGetCurrentISRNesting( puiValue )        xTraceISRGetCurrentNesting( puiValue )
 
 /** @internal Deprecated - Provides backwards-compability with older recorders for now, will be removed in the future */
-#define vTraceStoreISREnd(xIsTaskSwitchRequired) xTraceISREnd(xIsTaskSwitchRequired)
+            #define vTraceStoreISRBegin( xISRHandle )             xTraceISRBegin( xISRHandle )
+
+/** @internal Deprecated - Provides backwards-compability with older recorders for now, will be removed in the future */
+            #define vTraceStoreISREnd( xIsTaskSwitchRequired )    xTraceISREnd( xIsTaskSwitchRequired )
 
 /** @} */
 
-#ifdef __cplusplus
+            #ifdef __cplusplus
 }
-#endif
+            #endif
 
-#endif
+        #endif /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
-#endif
+    #endif /* if ( TRC_USE_TRACEALYZER_RECORDER == 1 ) */
 
-#endif
+#endif /* ifndef TRC_ISR_H */

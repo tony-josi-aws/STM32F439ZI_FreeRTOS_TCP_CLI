@@ -10,108 +10,114 @@
 
 #include <trcRecorder.h>
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+#if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+    #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#if (TRC_USE_INTERNAL_BUFFER == 1)
+        #if ( TRC_USE_INTERNAL_BUFFER == 1 )
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+            #include <stdio.h>
+            #include <string.h>
+            #include <stdarg.h>
 
-static TraceMultiCoreEventBuffer_t *pxInternalEventBuffer TRC_CFG_RECORDER_DATA_ATTRIBUTE;
+            static TraceMultiCoreEventBuffer_t * pxInternalEventBuffer TRC_CFG_RECORDER_DATA_ATTRIBUTE;
 
-traceResult xTraceInternalEventBufferInitialize(uint8_t* puiBuffer, uint32_t uiSize)
-{
-	/* uiSize must be larger than sizeof(TraceMultiCoreEventBuffer_t) or there will be no room for any data */
-	/* This should never fail */
-	TRC_ASSERT(uiSize > sizeof(TraceMultiCoreEventBuffer_t));
-	
-	/* pxInternalBuffer will be placed at the beginning of the puiBuffer */
-	pxInternalEventBuffer = (TraceMultiCoreEventBuffer_t*)puiBuffer;
+            traceResult xTraceInternalEventBufferInitialize( uint8_t * puiBuffer,
+                                                             uint32_t uiSize )
+            {
+                /* uiSize must be larger than sizeof(TraceMultiCoreEventBuffer_t) or there will be no room for any data */
+                /* This should never fail */
+                TRC_ASSERT( uiSize > sizeof( TraceMultiCoreEventBuffer_t ) );
 
-	/* Send in a an address pointing after the TraceMultiCoreEventBuffer_t */
-	/* We need to check this */
-	if (xTraceMultiCoreEventBufferInitialize(pxInternalEventBuffer, TRC_EVENT_BUFFER_OPTION_SKIP,
-		&puiBuffer[sizeof(TraceMultiCoreEventBuffer_t)], uiSize - sizeof(TraceMultiCoreEventBuffer_t)) == TRC_FAIL)
-	{
-		return TRC_FAIL;
-	}
+                /* pxInternalBuffer will be placed at the beginning of the puiBuffer */
+                pxInternalEventBuffer = ( TraceMultiCoreEventBuffer_t * ) puiBuffer;
 
-	xTraceSetComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER);
+                /* Send in a an address pointing after the TraceMultiCoreEventBuffer_t */
+                /* We need to check this */
+                if( xTraceMultiCoreEventBufferInitialize( pxInternalEventBuffer, TRC_EVENT_BUFFER_OPTION_SKIP,
+                                                          &puiBuffer[ sizeof( TraceMultiCoreEventBuffer_t ) ], uiSize - sizeof( TraceMultiCoreEventBuffer_t ) ) == TRC_FAIL )
+                {
+                    return TRC_FAIL;
+                }
 
-	return TRC_SUCCESS;
-}
+                xTraceSetComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER );
 
-traceResult xTraceInternalEventBufferAlloc(uint32_t uiSize, void **ppvData)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
+                return TRC_SUCCESS;
+            }
 
-	return xTraceMultiCoreEventBufferAlloc(pxInternalEventBuffer, uiSize, ppvData);
-}
+            traceResult xTraceInternalEventBufferAlloc( uint32_t uiSize,
+                                                        void ** ppvData )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
 
-traceResult xTraceInternalEventBufferAllocCommit(void *pvData, uint32_t uiSize, int32_t *piBytesWritten)
-{
-	(void)pvData;
+                return xTraceMultiCoreEventBufferAlloc( pxInternalEventBuffer, uiSize, ppvData );
+            }
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
+            traceResult xTraceInternalEventBufferAllocCommit( void * pvData,
+                                                              uint32_t uiSize,
+                                                              int32_t * piBytesWritten )
+            {
+                ( void ) pvData;
 
-	return xTraceMultiCoreEventBufferAllocCommit(pxInternalEventBuffer, pvData, uiSize, piBytesWritten);
-}
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
 
-traceResult xTraceInternalEventBufferPush(void *pvData, uint32_t uiSize, int32_t *piBytesWritten)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
-	
-	return xTraceMultiCoreEventBufferPush(pxInternalEventBuffer, pvData, uiSize, piBytesWritten);
-}
+                return xTraceMultiCoreEventBufferAllocCommit( pxInternalEventBuffer, pvData, uiSize, piBytesWritten );
+            }
 
-traceResult xTraceInternalEventBufferTransferAll(void)
-{
-	int32_t iBytesWritten = 0;
+            traceResult xTraceInternalEventBufferPush( void * pvData,
+                                                       uint32_t uiSize,
+                                                       int32_t * piBytesWritten )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
+                return xTraceMultiCoreEventBufferPush( pxInternalEventBuffer, pvData, uiSize, piBytesWritten );
+            }
 
-	return xTraceMultiCoreEventBufferTransferAll(pxInternalEventBuffer, &iBytesWritten);
-}
+            traceResult xTraceInternalEventBufferTransferAll( void )
+            {
+                int32_t iBytesWritten = 0;
 
-traceResult xTraceInternalEventBufferTransferChunk(void)
-{
-	int32_t iBytesWritten = 0;
-	int32_t iCounter = 0;
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
+                return xTraceMultiCoreEventBufferTransferAll( pxInternalEventBuffer, &iBytesWritten );
+            }
 
-	do
-	{
-		if (xTraceMultiCoreEventBufferTransferChunk(pxInternalEventBuffer, TRC_INTERNAL_BUFFER_CHUNK_SIZE, &iBytesWritten) == TRC_FAIL)
-		{
-			return TRC_FAIL;
-		}
+            traceResult xTraceInternalEventBufferTransferChunk( void )
+            {
+                int32_t iBytesWritten = 0;
+                int32_t iCounter = 0;
 
-		iCounter++;
-		/* This will do another loop if TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT of data was transferred and we haven't already looped TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT number of times */
-	} while (iBytesWritten >= (int32_t)(TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT) && iCounter < (int32_t)(TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT));
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
 
-	return TRC_SUCCESS;
-}
+                do
+                {
+                    if( xTraceMultiCoreEventBufferTransferChunk( pxInternalEventBuffer, TRC_INTERNAL_BUFFER_CHUNK_SIZE, &iBytesWritten ) == TRC_FAIL )
+                    {
+                        return TRC_FAIL;
+                    }
 
-traceResult xTraceInternalEventBufferClear()
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER));
-	
-	return xTraceMultiCoreEventBufferClear(pxInternalEventBuffer);
-}
+                    iCounter++;
+                    /* This will do another loop if TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT of data was transferred and we haven't already looped TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT number of times */
+                } while( iBytesWritten >= ( int32_t ) ( TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT ) && iCounter < ( int32_t ) ( TRC_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT ) );
 
-#endif /* (TRC_USE_INTERNAL_BUFFER == 1) */
+                return TRC_SUCCESS;
+            }
 
-#endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
+            traceResult xTraceInternalEventBufferClear()
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_INTERNAL_EVENT_BUFFER ) );
+
+                return xTraceMultiCoreEventBufferClear( pxInternalEventBuffer );
+            }
+
+        #endif /* (TRC_USE_INTERNAL_BUFFER == 1) */
+
+    #endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
 
 #endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */

@@ -74,7 +74,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * An httpbin server can be setup locally for running this demo against
  * it. Please refer to the instructions in the README to do so.
  *
- * 
+ *
  */
 
 #define democonfigSERVER_HOSTNAME    "httpbin.org"
@@ -117,6 +117,6 @@ extern void vLoggingPrintf( const char * pcFormatString,
  * In the Windows port, this stack only holds a structure. The actual
  * stack is created by an operating system thread.
  */
-#define democonfigDEMO_STACKSIZE                    (configMINIMAL_STACK_SIZE * 3)
+#define democonfigDEMO_STACKSIZE                    ( configMINIMAL_STACK_SIZE * 3 )
 
 #endif /* ifndef DEMO_CONFIG_H */

@@ -1,29 +1,29 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
- * @file 
- * 
+ * @file
+ *
  * @brief Public trace state machine APIs.
  */
 
 #ifndef TRC_STATE_MACHINE_H
-#define TRC_STATE_MACHINE_H
+    #define TRC_STATE_MACHINE_H
 
-#include <trcTypes.h>
+    #include <trcTypes.h>
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+    #if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+        #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+            #ifdef __cplusplus
+            extern "C" {
+            #endif
 
 /**
  * @defgroup trace_state_machine_apis Trace State Machine APIs
@@ -33,63 +33,67 @@ extern "C" {
 
 /**
  * @brief Creates trace state machine.
- * 
+ *
  * @param[in] szName Name.
- * @param[out] pxStateMachineHandle Pointer to uninitialized trace state machine. 
- * 
+ * @param[out] pxStateMachineHandle Pointer to uninitialized trace state machine.
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceStateMachineCreate(const char *szName, TraceStateMachineHandle_t *pxStateMachineHandle);
+            traceResult xTraceStateMachineCreate( const char * szName,
+                                                  TraceStateMachineHandle_t * pxStateMachineHandle );
 
 /**
  * @brief Creates trace state machine state.
- * 
+ *
  * @param[in] xStateMachineHandle Pointer to initialized trace state machine.
  * @param[in] szName Name.
  * @param[out] pxStateHandle Pointer to uninitialized trace state machine state.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceStateMachineStateCreate(TraceStateMachineHandle_t xStateMachineHandle, const char *szName, TraceStateMachineStateHandle_t *pxStateHandle);
+            traceResult xTraceStateMachineStateCreate( TraceStateMachineHandle_t xStateMachineHandle,
+                                                       const char * szName,
+                                                       TraceStateMachineStateHandle_t * pxStateHandle );
 
 /**
  * @brief Sets trace state machine state.
- * 
+ *
  * @param[in] xStateMachineHandle Pointer to initialized trace state machine.
  * @param[in] xStateHandle Pointer to initialized trace state machine state.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceStateMachineSetState(TraceStateMachineHandle_t xStateMachineHandle, TraceStateMachineStateHandle_t xStateHandle);
+            traceResult xTraceStateMachineSetState( TraceStateMachineHandle_t xStateMachineHandle,
+                                                    TraceStateMachineStateHandle_t xStateHandle );
 
 /** @} */
 
-#ifdef __cplusplus
+            #ifdef __cplusplus
 }
-#endif
+            #endif
 
-#else
-
-/**
- * @brief Disabled by TRC_CFG_RECORDER_MODE
- */
-#define xTraceStateMachineCreate(__szName, __pxStateMachineHandle) ((void)(__szName), *(__pxStateMachineHandle) = 0, TRC_SUCCESS)
+        #else  /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceStateMachineStateCreate(__xStateMachineHandle, __szName, __pxStateHandle) ((void)(__xStateMachineHandle), (void)(__szName), *(__pxStateHandle) = 0, TRC_SUCCESS)
+            #define xTraceStateMachineCreate( __szName, __pxStateMachineHandle )                         ( ( void ) ( __szName ), *( __pxStateMachineHandle ) = 0, TRC_SUCCESS )
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceStateMachineSetState(__xStateMachineHandle, __xStateHandle) ((void)(__xStateMachineHandle), (void)(__xStateHandle), TRC_SUCCESS)
+            #define xTraceStateMachineStateCreate( __xStateMachineHandle, __szName, __pxStateHandle )    ( ( void ) ( __xStateMachineHandle ), ( void ) ( __szName ), *( __pxStateHandle ) = 0, TRC_SUCCESS )
 
-#endif
+/**
+ * @brief Disabled by TRC_CFG_RECORDER_MODE
+ */
+            #define xTraceStateMachineSetState( __xStateMachineHandle, __xStateHandle )                  ( ( void ) ( __xStateMachineHandle ), ( void ) ( __xStateHandle ), TRC_SUCCESS )
 
-#endif
+        #endif /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
-#endif
+    #endif /* if ( TRC_USE_TRACEALYZER_RECORDER == 1 ) */
+
+#endif /* ifndef TRC_STATE_MACHINE_H */

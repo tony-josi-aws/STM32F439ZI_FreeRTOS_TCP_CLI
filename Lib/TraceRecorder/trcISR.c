@@ -1,248 +1,256 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*
-* The implementation for ISR tagging.
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The implementation for ISR tagging.
+ */
 
 #include <trcRecorder.h>
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+#if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+    #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-TraceISRData_t* pxTraceISRData TRC_CFG_RECORDER_DATA_ATTRIBUTE;
+        TraceISRData_t * pxTraceISRData TRC_CFG_RECORDER_DATA_ATTRIBUTE;
 
-traceResult xTraceISRInitialize(TraceISRData_t *pxBuffer)
-{
-	uint32_t uiCoreIndex;
-	uint32_t uiStackIndex;
+        traceResult xTraceISRInitialize( TraceISRData_t * pxBuffer )
+        {
+            uint32_t uiCoreIndex;
+            uint32_t uiStackIndex;
 
-	/* This should never fail */
-	TRC_ASSERT(pxBuffer != (void*)0);
+            /* This should never fail */
+            TRC_ASSERT( pxBuffer != ( void * ) 0 );
 
-	pxTraceISRData = pxBuffer;
+            pxTraceISRData = pxBuffer;
 
-	for (uiCoreIndex = 0u; uiCoreIndex < (uint32_t)(TRC_CFG_CORE_COUNT); uiCoreIndex++)
-	{
-		TraceISRCoreData_t* pxCoreData = &pxTraceISRData->cores[uiCoreIndex];
+            for( uiCoreIndex = 0u; uiCoreIndex < ( uint32_t ) ( TRC_CFG_CORE_COUNT ); uiCoreIndex++ )
+            {
+                TraceISRCoreData_t * pxCoreData = &pxTraceISRData->cores[ uiCoreIndex ];
 
-		/* Initialize ISR stack */
-		for (uiStackIndex = 0u; uiStackIndex < (uint32_t)(TRC_CFG_MAX_ISR_NESTING); uiStackIndex++)
-		{
-			pxCoreData->handleStack[uiStackIndex] = 0;
-		}
-		
-		pxCoreData->stackIndex = -1;
-		pxCoreData->isPendingContextSwitch = 0u;
-	}
-	
-	xTraceSetComponentInitialized(TRC_RECORDER_COMPONENT_ISR);
+                /* Initialize ISR stack */
+                for( uiStackIndex = 0u; uiStackIndex < ( uint32_t ) ( TRC_CFG_MAX_ISR_NESTING ); uiStackIndex++ )
+                {
+                    pxCoreData->handleStack[ uiStackIndex ] = 0;
+                }
 
-	return TRC_SUCCESS;
-}
+                pxCoreData->stackIndex = -1;
+                pxCoreData->isPendingContextSwitch = 0u;
+            }
+
+            xTraceSetComponentInitialized( TRC_RECORDER_COMPONENT_ISR );
+
+            return TRC_SUCCESS;
+        }
 
 /*cstat !MISRAC2004-6.3 !MISRAC2012-Dir-4.6_a Suppress basic char type usage*/
-traceResult xTraceISRRegister(const char* szName, uint32_t uiPriority, TraceISRHandle_t *pxISRHandle)
-{
-	TraceEntryHandle_t xEntryHandle;
-	TraceEventHandle_t xEventHandle = 0;
-	uint32_t i, uiLength, uiValue = 0u;
+        traceResult xTraceISRRegister( const char * szName,
+                                       uint32_t uiPriority,
+                                       TraceISRHandle_t * pxISRHandle )
+        {
+            TraceEntryHandle_t xEntryHandle;
+            TraceEventHandle_t xEventHandle = 0;
+            uint32_t i, uiLength, uiValue = 0u;
 
-	/* We need to check this */
-	if (xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR) == 0U)
-	{
-		return TRC_FAIL;
-	}
+            /* We need to check this */
+            if( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) == 0U )
+            {
+                return TRC_FAIL;
+            }
 
-	/* This should never fail */
-	TRC_ASSERT(pxISRHandle != (void*)0);
+            /* This should never fail */
+            TRC_ASSERT( pxISRHandle != ( void * ) 0 );
 
-	if (szName == (void*)0)
-	{
-		szName = ""; /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
-	}
+            if( szName == ( void * ) 0 )
+            {
+                szName = ""; /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
+            }
 
-	/* Always save in symbol table, in case the recording has not yet started */
-	/* We need to check this */
-	if (xTraceEntryCreate(&xEntryHandle) == TRC_FAIL)
-	{
-		return TRC_FAIL;
-	}
+            /* Always save in symbol table, in case the recording has not yet started */
+            /* We need to check this */
+            if( xTraceEntryCreate( &xEntryHandle ) == TRC_FAIL )
+            {
+                return TRC_FAIL;
+            }
 
-	for (i = 0u; (szName[i] != (char)0) && (i < 128u); i++) {} /*cstat !MISRAC2004-6.3 !MISRAC2012-Dir-4.6_a Suppress basic char type usage*/ /*cstat !MISRAC2004-17.4_b We need to access every character in the string*/
+            for( i = 0u; ( szName[ i ] != ( char ) 0 ) && ( i < 128u ); i++ )
+            {
+            }                                                  /*cstat !MISRAC2004-6.3 !MISRAC2012-Dir-4.6_a Suppress basic char type usage*/ /*cstat !MISRAC2004-17.4_b We need to access every character in the string*/
 
-	uiLength = i;
+            uiLength = i;
 
-	/* This should never fail */
-	TRC_ASSERT_ALWAYS_EVALUATE(xTraceEntrySetSymbol(xEntryHandle, szName, uiLength) == TRC_SUCCESS);
+            /* This should never fail */
+            TRC_ASSERT_ALWAYS_EVALUATE( xTraceEntrySetSymbol( xEntryHandle, szName, uiLength ) == TRC_SUCCESS );
 
-	/* This should never fail */
-	TRC_ASSERT_ALWAYS_EVALUATE(xTraceEntrySetState(xEntryHandle, 0u, (TraceUnsignedBaseType_t)uiPriority) == TRC_SUCCESS);
+            /* This should never fail */
+            TRC_ASSERT_ALWAYS_EVALUATE( xTraceEntrySetState( xEntryHandle, 0u, ( TraceUnsignedBaseType_t ) uiPriority ) == TRC_SUCCESS );
 
-	*pxISRHandle = (TraceISRHandle_t)xEntryHandle;
+            *pxISRHandle = ( TraceISRHandle_t ) xEntryHandle;
 
-	/* We need to check this */
-	if (xTraceEventBegin(PSF_EVENT_DEFINE_ISR, uiLength + sizeof(void*) + sizeof(uint32_t), &xEventHandle) == TRC_SUCCESS)
-	{
-		(void)xTraceEventAddPointer(xEventHandle, (void*)xEntryHandle);
-		(void)xTraceEventAdd32(xEventHandle, uiPriority);
-		(void)xTraceEventAddString(xEventHandle, szName, uiLength);
+            /* We need to check this */
+            if( xTraceEventBegin( PSF_EVENT_DEFINE_ISR, uiLength + sizeof( void * ) + sizeof( uint32_t ), &xEventHandle ) == TRC_SUCCESS )
+            {
+                ( void ) xTraceEventAddPointer( xEventHandle, ( void * ) xEntryHandle );
+                ( void ) xTraceEventAdd32( xEventHandle, uiPriority );
+                ( void ) xTraceEventAddString( xEventHandle, szName, uiLength );
 
-		/* Check if we can truncate */
-		(void)xTraceEventPayloadRemaining(xEventHandle, &uiValue);
-		if (uiValue > 0u)
-		{
-			(void)xTraceEventAdd8(xEventHandle, 0u);
-		}
+                /* Check if we can truncate */
+                ( void ) xTraceEventPayloadRemaining( xEventHandle, &uiValue );
 
-		(void)xTraceEventEnd(xEventHandle); /*cstat !MISRAC2012-Rule-17.7*/
-	}
+                if( uiValue > 0u )
+                {
+                    ( void ) xTraceEventAdd8( xEventHandle, 0u );
+                }
 
-	return TRC_SUCCESS;
-}
+                ( void ) xTraceEventEnd( xEventHandle ); /*cstat !MISRAC2012-Rule-17.7*/
+            }
 
-traceResult xTraceISRBegin(TraceISRHandle_t xISRHandle)
-{
-	TraceISRCoreData_t* pxCoreData;
-	TRACE_ALLOC_CRITICAL_SECTION();
+            return TRC_SUCCESS;
+        }
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR));
+        traceResult xTraceISRBegin( TraceISRHandle_t xISRHandle )
+        {
+            TraceISRCoreData_t * pxCoreData;
 
-	TRACE_ENTER_CRITICAL_SECTION();
+            TRACE_ALLOC_CRITICAL_SECTION();
 
-	/* We are at the start of a possible ISR chain.
-	 * No context switches should have been triggered now.
-	 */
-	pxCoreData = &pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()];
-	
-	if (pxCoreData->stackIndex == -1)
-	{
-		pxCoreData->isPendingContextSwitch = 0u;
-	}
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) );
 
-	if (pxCoreData->stackIndex < ((TRC_CFG_MAX_ISR_NESTING) - 1))
-	{
-		pxCoreData->stackIndex++;
-		pxCoreData->handleStack[pxCoreData->stackIndex] = xISRHandle;
+            TRACE_ENTER_CRITICAL_SECTION();
 
-#if (TRC_CFG_INCLUDE_ISR_TRACING == 1)
-		(void)xTraceEventCreate1(PSF_EVENT_ISR_BEGIN, (TraceUnsignedBaseType_t)xISRHandle); /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 Suppress conversion from pointer to integer check*/
-#endif
-	}
-	else
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
+            /* We are at the start of a possible ISR chain.
+             * No context switches should have been triggered now.
+             */
+            pxCoreData = &pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ];
 
-		(void)xTraceError(TRC_ERROR_ISR_NESTING_OVERFLOW);
-		
-		return TRC_FAIL;
-	}
+            if( pxCoreData->stackIndex == -1 )
+            {
+                pxCoreData->isPendingContextSwitch = 0u;
+            }
 
-	TRACE_EXIT_CRITICAL_SECTION();
+            if( pxCoreData->stackIndex < ( ( TRC_CFG_MAX_ISR_NESTING ) -1 ) )
+            {
+                pxCoreData->stackIndex++;
+                pxCoreData->handleStack[ pxCoreData->stackIndex ] = xISRHandle;
 
-	return TRC_SUCCESS;
-}
+                #if ( TRC_CFG_INCLUDE_ISR_TRACING == 1 )
+                    ( void ) xTraceEventCreate1( PSF_EVENT_ISR_BEGIN, ( TraceUnsignedBaseType_t ) xISRHandle ); /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 Suppress conversion from pointer to integer check*/
+                #endif
+            }
+            else
+            {
+                TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceISREnd(TraceBaseType_t xIsTaskSwitchRequired)
-{
-	TraceISRCoreData_t* pxCoreData;
-	TRACE_ALLOC_CRITICAL_SECTION();
+                ( void ) xTraceError( TRC_ERROR_ISR_NESTING_OVERFLOW );
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR));
+                return TRC_FAIL;
+            }
 
-	TRACE_ENTER_CRITICAL_SECTION();
-	
-	pxCoreData = &pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()];
+            TRACE_EXIT_CRITICAL_SECTION();
 
-	pxCoreData->stackIndex--;
+            return TRC_SUCCESS;
+        }
 
-#if (TRC_CFG_INCLUDE_ISR_TRACING == 1)
-	/* Is there a pending task-switch? (perhaps from an earlier ISR) */
-	pxCoreData->isPendingContextSwitch |= (uint32_t)xIsTaskSwitchRequired;
+        traceResult xTraceISREnd( TraceBaseType_t xIsTaskSwitchRequired )
+        {
+            TraceISRCoreData_t * pxCoreData;
 
-	if (pxCoreData->stackIndex >= 0)
-	{
-		/* Store return to interrupted ISR (if nested ISRs)*/
-		(void)xTraceEventCreate1(PSF_EVENT_ISR_RESUME, (TraceUnsignedBaseType_t)pxCoreData->handleStack[pxCoreData->stackIndex]); /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 Suppress conversion from pointer to integer check*/
-	}
-	else
-	{
-		/* Store return to interrupted task, if no context switch will occur in between. */
-		if ((pxCoreData->isPendingContextSwitch == 0U) || (xTraceKernelPortIsSchedulerSuspended() == 1U)) /*cstat !MISRAC2004-13.7_b For some kernel ports xTraceKernelPortIsSchedulerSuspended() will never return 1, and that is expected*/ 
-		{
-			(void)xTraceEventCreate1(PSF_EVENT_TASK_ACTIVATE, (TraceUnsignedBaseType_t)xTraceTaskGetCurrentReturn());  /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 !MISRAC2012-Rule-11.6 Suppress conversion from pointer to integer check*/
-		}
-	}
-#endif
+            TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_EXIT_CRITICAL_SECTION();
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) );
 
-	return TRC_SUCCESS;
-}
+            TRACE_ENTER_CRITICAL_SECTION();
 
-#if ((TRC_CFG_USE_TRACE_ASSERT) == 1)
+            pxCoreData = &pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ];
 
-traceResult xTraceISRGetCurrentNesting(int32_t* puiValue)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR));
+            pxCoreData->stackIndex--;
 
-	/* This should never fail */
-	TRC_ASSERT(puiValue != (void*)0);
+            #if ( TRC_CFG_INCLUDE_ISR_TRACING == 1 )
+                /* Is there a pending task-switch? (perhaps from an earlier ISR) */
+                pxCoreData->isPendingContextSwitch |= ( uint32_t ) xIsTaskSwitchRequired;
 
-	TraceISRCoreData_t* pxCoreData = &pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()];
-	*puiValue = pxCoreData->stackIndex;
+                if( pxCoreData->stackIndex >= 0 )
+                {
+                    /* Store return to interrupted ISR (if nested ISRs)*/
+                    ( void ) xTraceEventCreate1( PSF_EVENT_ISR_RESUME, ( TraceUnsignedBaseType_t ) pxCoreData->handleStack[ pxCoreData->stackIndex ] ); /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 Suppress conversion from pointer to integer check*/
+                }
+                else
+                {
+                    /* Store return to interrupted task, if no context switch will occur in between. */
+                    if( ( pxCoreData->isPendingContextSwitch == 0U ) || ( xTraceKernelPortIsSchedulerSuspended() == 1U ) )                /*cstat !MISRAC2004-13.7_b For some kernel ports xTraceKernelPortIsSchedulerSuspended() will never return 1, and that is expected*/
+                    {
+                        ( void ) xTraceEventCreate1( PSF_EVENT_TASK_ACTIVATE, ( TraceUnsignedBaseType_t ) xTraceTaskGetCurrentReturn() ); /*cstat !MISRAC2004-11.3 !MISRAC2012-Rule-11.4 !MISRAC2012-Rule-11.6 Suppress conversion from pointer to integer check*/
+                    }
+                }
+            #endif /* if ( TRC_CFG_INCLUDE_ISR_TRACING == 1 ) */
 
-	return TRC_SUCCESS;
-}
+            TRACE_EXIT_CRITICAL_SECTION();
 
-int32_t xTraceISRGetCurrentNestingReturned(void)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR));
+            return TRC_SUCCESS;
+        }
 
-	return pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()].stackIndex;
-}
+        #if ( ( TRC_CFG_USE_TRACE_ASSERT ) == 1 )
 
-traceResult xTraceISRGetCurrent(TraceISRHandle_t* pxISRHandle)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_ISR));
+            traceResult xTraceISRGetCurrentNesting( int32_t * puiValue )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) );
 
-	/* This should never fail */
-	TRC_ASSERT(pxISRHandle != (void*)0);
+                /* This should never fail */
+                TRC_ASSERT( puiValue != ( void * ) 0 );
 
-	TraceISRCoreData_t* pxCoreData = &pxTraceISRData->cores[TRC_CFG_GET_CURRENT_CORE()];
+                TraceISRCoreData_t * pxCoreData = &pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ];
+                *puiValue = pxCoreData->stackIndex;
 
-	if (pxCoreData->stackIndex < 0)
-	{
-		return TRC_FAIL;
-	}
+                return TRC_SUCCESS;
+            }
 
-	*pxISRHandle = pxCoreData->handleStack[pxCoreData->stackIndex];
+            int32_t xTraceISRGetCurrentNestingReturned( void )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) );
 
-	return TRC_SUCCESS;
-}
+                return pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ].stackIndex;
+            }
 
-#endif
+            traceResult xTraceISRGetCurrent( TraceISRHandle_t * pxISRHandle )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_ISR ) );
+
+                /* This should never fail */
+                TRC_ASSERT( pxISRHandle != ( void * ) 0 );
+
+                TraceISRCoreData_t * pxCoreData = &pxTraceISRData->cores[ TRC_CFG_GET_CURRENT_CORE() ];
+
+                if( pxCoreData->stackIndex < 0 )
+                {
+                    return TRC_FAIL;
+                }
+
+                *pxISRHandle = pxCoreData->handleStack[ pxCoreData->stackIndex ];
+
+                return TRC_SUCCESS;
+            }
+
+        #endif /* if ( ( TRC_CFG_USE_TRACE_ASSERT ) == 1 ) */
 
 /* DEPRECATED */
 /*cstat !MISRAC2004-6.3 !MISRAC2012-Dir-4.6_a Suppress basic char type usage*/
-TraceISRHandle_t xTraceSetISRProperties(const char* szName, uint32_t uiPriority)
-{
-	TraceISRHandle_t xISRHandle = 0;
+        TraceISRHandle_t xTraceSetISRProperties( const char * szName,
+                                                 uint32_t uiPriority )
+        {
+            TraceISRHandle_t xISRHandle = 0;
 
-	(void)xTraceISRRegister(szName, uiPriority, &xISRHandle);
+            ( void ) xTraceISRRegister( szName, uiPriority, &xISRHandle );
 
-	return xISRHandle;
-}
+            return xISRHandle;
+        }
 
-#endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
+    #endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
 
 #endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */

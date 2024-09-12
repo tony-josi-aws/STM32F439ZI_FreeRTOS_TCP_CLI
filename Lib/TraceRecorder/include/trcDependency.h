@@ -1,10 +1,10 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * @file
@@ -13,17 +13,17 @@
  */
 
 #ifndef TRC_DEPENDENCY_H
-#define TRC_DEPENDENCY_H
+    #define TRC_DEPENDENCY_H
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+    #if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+        #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#include <trcTypes.h>
+            #include <trcTypes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+            #ifdef __cplusplus
+            extern "C" {
+            #endif
 
 /**
  * @defgroup trace_dependency_apis Trace Dependency APIs
@@ -41,22 +41,23 @@ extern "C" {
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceDependencyRegister(const char* szName, TraceUnsignedBaseType_t uxDependencyType);
+            traceResult xTraceDependencyRegister( const char * szName,
+                                                  TraceUnsignedBaseType_t uxDependencyType );
 
 /** @} */
 
-#ifdef __cplusplus
+            #ifdef __cplusplus
 }
-#endif
+            #endif
 
-#else
+        #else  /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
-#ifndef xTraceDependencyRegister
-#define xTraceDependencyRegister(szName, uxDependencyType) TRC_COMMA_EXPR_TO_STATEMENT_EXPR_4((void)(szName), (void)(uxRegisterMethod), (void)(pxRunnableHandle), TRC_SUCCESS)
-#endif
+            #ifndef xTraceDependencyRegister
+                #define xTraceDependencyRegister( szName, uxDependencyType )    TRC_COMMA_EXPR_TO_STATEMENT_EXPR_4( ( void ) ( szName ), ( void ) ( uxRegisterMethod ), ( void ) ( pxRunnableHandle ), TRC_SUCCESS )
+            #endif
 
-#endif
+        #endif /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
-#endif
+    #endif /* if ( TRC_USE_TRACEALYZER_RECORDER == 1 ) */
 
-#endif
+#endif /* ifndef TRC_DEPENDENCY_H */

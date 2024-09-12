@@ -1,727 +1,792 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*
-* The implementation for events.
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The implementation for events.
+ */
 
 #include <trcRecorder.h>
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+#if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+    #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
 /*cstat !MISRAC2004-19.4 Suppress macro check*/
-#define VERIFY_EVENT_SIZE(i) \
-	if ((TraceUnsignedBaseType_t)(i) > (TraceUnsignedBaseType_t)(TRC_MAX_BLOB_SIZE)) \
-	{ \
-		(void)xTraceDiagnosticsSetIfHigher(TRC_DIAGNOSTICS_BLOB_MAX_BYTES_TRUNCATED, (TraceBaseType_t)(i) - (TraceBaseType_t)(TRC_MAX_BLOB_SIZE)); \
-		(i) = (uint32_t)(TRC_MAX_BLOB_SIZE); \
-	}
+        #define VERIFY_EVENT_SIZE( i )                                                                                                                            \
+    if( ( TraceUnsignedBaseType_t ) ( i ) > ( TraceUnsignedBaseType_t ) ( TRC_MAX_BLOB_SIZE ) )                                                                   \
+    {                                                                                                                                                             \
+        ( void ) xTraceDiagnosticsSetIfHigher( TRC_DIAGNOSTICS_BLOB_MAX_BYTES_TRUNCATED, ( TraceBaseType_t ) ( i ) - ( TraceBaseType_t ) ( TRC_MAX_BLOB_SIZE ) ); \
+        ( i ) = ( uint32_t ) ( TRC_MAX_BLOB_SIZE );                                                                                                               \
+    }
 
-TraceEventDataTable_t *pxTraceEventDataTable TRC_CFG_RECORDER_DATA_ATTRIBUTE;
+    TraceEventDataTable_t * pxTraceEventDataTable TRC_CFG_RECORDER_DATA_ATTRIBUTE;
 
-traceResult xTraceEventInitialize(TraceEventDataTable_t* pxBuffer)
-{
-	TraceCoreEventData_t* pxCoreEventData;
-	uint32_t i, j;
+    traceResult xTraceEventInitialize( TraceEventDataTable_t * pxBuffer )
+    {
+        TraceCoreEventData_t * pxCoreEventData;
+        uint32_t i, j;
 
-	/* This should never fail */
-	TRC_ASSERT(pxBuffer != (void*)0);
+        /* This should never fail */
+        TRC_ASSERT( pxBuffer != ( void * ) 0 );
 
-	pxTraceEventDataTable = pxBuffer;
+        pxTraceEventDataTable = pxBuffer;
 
-	for (i = 0u; i < (uint32_t)(TRC_CFG_CORE_COUNT); i++)
-	{
-		pxCoreEventData = &pxTraceEventDataTable->coreEventData[i];
+        for( i = 0u; i < ( uint32_t ) ( TRC_CFG_CORE_COUNT ); i++ )
+        {
+            pxCoreEventData = &pxTraceEventDataTable->coreEventData[ i ];
 
-		pxCoreEventData->eventCounter = 0u;
+            pxCoreEventData->eventCounter = 0u;
 
-		for (j = 0u; j < ((uint32_t)(TRC_CFG_MAX_ISR_NESTING) + 1u); j++)
-		{
-			RESET_EVENT_DATA(&pxCoreEventData->eventData[j]);
-		}
-	}
+            for( j = 0u; j < ( ( uint32_t ) ( TRC_CFG_MAX_ISR_NESTING ) +1u ); j++ )
+            {
+                RESET_EVENT_DATA( &pxCoreEventData->eventData[ j ] );
+            }
+        }
 
-	xTraceSetComponentInitialized(TRC_RECORDER_COMPONENT_EVENT);
+        xTraceSetComponentInitialized( TRC_RECORDER_COMPONENT_EVENT );
 
-	return TRC_SUCCESS;
-}
+        return TRC_SUCCESS;
+    }
 
-traceResult xTraceEventCreate0(uint32_t uiEventCode)
-{
-	TraceEvent0_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
-	TRACE_ALLOC_CRITICAL_SECTION();
+    traceResult xTraceEventCreate0( uint32_t uiEventCode )
+    {
+        TraceEvent0_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent0_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 0, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent0_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent0_t), &iBytesCommitted);
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 0, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent0_t ), &iBytesCommitted );
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        TRACE_EXIT_CRITICAL_SECTION();
 
-	return TRC_SUCCESS;
-}
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-traceResult xTraceEventCreate1(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1)
-{
-	TraceEvent1_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        return TRC_SUCCESS;
+    }
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+    traceResult xTraceEventCreate1( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1 )
+    {
+        TraceEvent1_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent1_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 1, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent1_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	pxEventData->uxParams[0] = uxParam1;
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 1, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent1_t), &iBytesCommitted);
+        pxEventData->uxParams[ 0 ] = uxParam1;
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent1_t ), &iBytesCommitted );
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        TRACE_EXIT_CRITICAL_SECTION();
 
-	return TRC_SUCCESS;
-}
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-traceResult xTraceEventCreate2(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1, TraceUnsignedBaseType_t uxParam2)
-{
-	TraceEvent2_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        return TRC_SUCCESS;
+    }
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+    traceResult xTraceEventCreate2( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1,
+                                    TraceUnsignedBaseType_t uxParam2 )
+    {
+        TraceEvent2_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent2_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 2, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent2_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	pxEventData->uxParams[0] = uxParam1;
-	pxEventData->uxParams[1] = uxParam2;
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 2, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent2_t), &iBytesCommitted);
+        pxEventData->uxParams[ 0 ] = uxParam1;
+        pxEventData->uxParams[ 1 ] = uxParam2;
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent2_t ), &iBytesCommitted );
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        TRACE_EXIT_CRITICAL_SECTION();
 
-	return TRC_SUCCESS;
-}
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-traceResult xTraceEventCreate3(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1, TraceUnsignedBaseType_t uxParam2, TraceUnsignedBaseType_t uxParam3)
-{
-	TraceEvent3_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        return TRC_SUCCESS;
+    }
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+    traceResult xTraceEventCreate3( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1,
+                                    TraceUnsignedBaseType_t uxParam2,
+                                    TraceUnsignedBaseType_t uxParam3 )
+    {
+        TraceEvent3_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent3_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 3, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
-	
-	pxEventData->uxParams[0] = uxParam1;
-	pxEventData->uxParams[1] = uxParam2;
-	pxEventData->uxParams[2] = uxParam3;
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent3_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent3_t), &iBytesCommitted);
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 3, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        pxEventData->uxParams[ 0 ] = uxParam1;
+        pxEventData->uxParams[ 1 ] = uxParam2;
+        pxEventData->uxParams[ 2 ] = uxParam3;
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent3_t ), &iBytesCommitted );
 
-	return TRC_SUCCESS;
-}
+        TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceEventCreate4(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1, TraceUnsignedBaseType_t uxParam2, TraceUnsignedBaseType_t uxParam3, TraceUnsignedBaseType_t uxParam4)
-{
-	TraceEvent4_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+        return TRC_SUCCESS;
+    }
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+    traceResult xTraceEventCreate4( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1,
+                                    TraceUnsignedBaseType_t uxParam2,
+                                    TraceUnsignedBaseType_t uxParam3,
+                                    TraceUnsignedBaseType_t uxParam4 )
+    {
+        TraceEvent4_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent4_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 4, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	pxEventData->uxParams[0] = uxParam1;
-	pxEventData->uxParams[1] = uxParam2;
-	pxEventData->uxParams[2] = uxParam3;
-	pxEventData->uxParams[3] = uxParam4;
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent4_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent4_t), &iBytesCommitted);
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 4, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        pxEventData->uxParams[ 0 ] = uxParam1;
+        pxEventData->uxParams[ 1 ] = uxParam2;
+        pxEventData->uxParams[ 2 ] = uxParam3;
+        pxEventData->uxParams[ 3 ] = uxParam4;
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent4_t ), &iBytesCommitted );
 
-	return TRC_SUCCESS;
-}
+        TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceEventCreate5(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1, TraceUnsignedBaseType_t uxParam2, TraceUnsignedBaseType_t uxParam3, TraceUnsignedBaseType_t uxParam4, TraceUnsignedBaseType_t uxParam5)
-{
-	TraceEvent5_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+        return TRC_SUCCESS;
+    }
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+    traceResult xTraceEventCreate5( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1,
+                                    TraceUnsignedBaseType_t uxParam2,
+                                    TraceUnsignedBaseType_t uxParam3,
+                                    TraceUnsignedBaseType_t uxParam4,
+                                    TraceUnsignedBaseType_t uxParam5 )
+    {
+        TraceEvent5_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent5_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 5, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	pxEventData->uxParams[0] = uxParam1;
-	pxEventData->uxParams[1] = uxParam2;
-	pxEventData->uxParams[2] = uxParam3;
-	pxEventData->uxParams[3] = uxParam4;
-	pxEventData->uxParams[4] = uxParam5;
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent5_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent5_t), &iBytesCommitted);
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 5, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        pxEventData->uxParams[ 0 ] = uxParam1;
+        pxEventData->uxParams[ 1 ] = uxParam2;
+        pxEventData->uxParams[ 2 ] = uxParam3;
+        pxEventData->uxParams[ 3 ] = uxParam4;
+        pxEventData->uxParams[ 4 ] = uxParam5;
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent5_t ), &iBytesCommitted );
 
-	return TRC_SUCCESS;
-}
+        TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceEventCreate6(uint32_t uiEventCode, TraceUnsignedBaseType_t uxParam1, TraceUnsignedBaseType_t uxParam2, TraceUnsignedBaseType_t uxParam3, TraceUnsignedBaseType_t uxParam4, TraceUnsignedBaseType_t uxParam5, TraceUnsignedBaseType_t uxParam6)
-{
-	TraceEvent6_t* pxEventData = (void*)0;
-	int32_t iBytesCommitted = 0;
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+        return TRC_SUCCESS;
+    }
 
-	/* We need to check this */
-	if (!xTraceIsRecorderEnabled())
-	{
-		return TRC_FAIL;
-	}
+    traceResult xTraceEventCreate6( uint32_t uiEventCode,
+                                    TraceUnsignedBaseType_t uxParam1,
+                                    TraceUnsignedBaseType_t uxParam2,
+                                    TraceUnsignedBaseType_t uxParam3,
+                                    TraceUnsignedBaseType_t uxParam4,
+                                    TraceUnsignedBaseType_t uxParam5,
+                                    TraceUnsignedBaseType_t uxParam6 )
+    {
+        TraceEvent6_t * pxEventData = ( void * ) 0;
+        int32_t iBytesCommitted = 0;
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        /* We need to check this */
+        if( !xTraceIsRecorderEnabled() )
+        {
+            return TRC_FAIL;
+        }
 
-	if (xTraceStreamPortAllocate(sizeof(TraceEvent6_t), (void**)&pxEventData) == TRC_FAIL) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	SET_BASE_EVENT_DATA(pxEventData, uiEventCode, 6, pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	pxEventData->uxParams[0] = uxParam1;
-	pxEventData->uxParams[1] = uxParam2;
-	pxEventData->uxParams[2] = uxParam3;
-	pxEventData->uxParams[3] = uxParam4;
-	pxEventData->uxParams[4] = uxParam5;
-	pxEventData->uxParams[5] = uxParam6;
+        if( xTraceStreamPortAllocate( sizeof( TraceEvent6_t ), ( void ** ) &pxEventData ) == TRC_FAIL ) /*cstat !MISRAC2004-11.4 !MISRAC2012-Rule-11.3 Suppress pointer checks*/
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	(void)xTraceStreamPortCommit(pxEventData, sizeof(TraceEvent6_t), &iBytesCommitted);
+        SET_BASE_EVENT_DATA( pxEventData, uiEventCode, 6, pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        pxEventData->uxParams[ 0 ] = uxParam1;
+        pxEventData->uxParams[ 1 ] = uxParam2;
+        pxEventData->uxParams[ 2 ] = uxParam3;
+        pxEventData->uxParams[ 3 ] = uxParam4;
+        pxEventData->uxParams[ 4 ] = uxParam5;
+        pxEventData->uxParams[ 5 ] = uxParam6;
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        ( void ) xTraceStreamPortCommit( pxEventData, sizeof( TraceEvent6_t ), &iBytesCommitted );
 
-	return TRC_SUCCESS;
-}
+        TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceEventBeginRawOffline(uint32_t uiSize, TraceEventHandle_t* pxEventHandle)
-{
-	int32_t ISR_nesting = 0;
-	TraceEventData_t* pxEventData;
-	TraceCoreEventData_t* pxCoreEventData;
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+        return TRC_SUCCESS;
+    }
 
-	/* We need to check this */
-	if (xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT) == 0U)
-	{
-		return TRC_FAIL;
-	}
+    traceResult xTraceEventBeginRawOffline( uint32_t uiSize,
+                                            TraceEventHandle_t * pxEventHandle )
+    {
+        int32_t ISR_nesting = 0;
+        TraceEventData_t * pxEventData;
+        TraceCoreEventData_t * pxCoreEventData;
 
-	/* This should never fail */
-	TRC_ASSERT(pxEventHandle != (void*)0);
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        /* We need to check this */
+        if( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) == 0U )
+        {
+            return TRC_FAIL;
+        }
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        /* This should never fail */
+        TRC_ASSERT( pxEventHandle != ( void * ) 0 );
 
-	pxCoreEventData = &pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()];
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	/* We backup the local variable to the CORE specific variable */
-	pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME = TRACE_ALLOC_CRITICAL_SECTION_NAME;
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	(void)xTraceISRGetCurrentNesting(&ISR_nesting);
+        pxCoreEventData = &pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ];
 
-	/* We add 1 since xTraceISRGetCurrentNesting(...) returns -1 if no ISR is active */
-	pxEventData = &pxCoreEventData->eventData[ISR_nesting + 1];
+        /* We backup the local variable to the CORE specific variable */
+        pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME = TRACE_ALLOC_CRITICAL_SECTION_NAME;
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData->pvBlob == 0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        ( void ) xTraceISRGetCurrentNesting( &ISR_nesting );
 
-	VERIFY_EVENT_SIZE(uiSize); /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
+        /* We add 1 since xTraceISRGetCurrentNesting(...) returns -1 if no ISR is active */
+        pxEventData = &pxCoreEventData->eventData[ ISR_nesting + 1 ];
 
-	pxEventData->size = ((uiSize + (sizeof(TraceUnsignedBaseType_t) - 1u)) / sizeof(TraceUnsignedBaseType_t)) * sizeof(TraceUnsignedBaseType_t);	/* BaseType align */
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData->pvBlob == 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	pxEventData->offset = 0u;
+                                   );
 
-	/* This can fail and we should handle it */
-	if (xTraceStreamPortAllocate(pxEventData->size, &pxEventData->pvBlob) == TRC_FAIL)
-	{
-		TRACE_EXIT_CRITICAL_SECTION();
-		return TRC_FAIL;
-	}
+        VERIFY_EVENT_SIZE( uiSize );                                                                                                                             /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
 
-	*pxEventHandle = (TraceEventHandle_t)pxEventData;
+        pxEventData->size = ( ( uiSize + ( sizeof( TraceUnsignedBaseType_t ) - 1u ) ) / sizeof( TraceUnsignedBaseType_t ) ) * sizeof( TraceUnsignedBaseType_t ); /* BaseType align */
 
-	return TRC_SUCCESS;
-}
+        pxEventData->offset = 0u;
 
-traceResult xTraceEventBeginRawOfflineBlocking(uint32_t uiSize, TraceEventHandle_t* pxEventHandle)
-{
-	TraceEventData_t* pxEventData;
-	TraceCoreEventData_t* pxCoreEventData;
-	int32_t ISR_nesting = 0;
-	uint32_t uiAttempts = 0u;
+        /* This can fail and we should handle it */
+        if( xTraceStreamPortAllocate( pxEventData->size, &pxEventData->pvBlob ) == TRC_FAIL )
+        {
+            TRACE_EXIT_CRITICAL_SECTION();
+            return TRC_FAIL;
+        }
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+        *pxEventHandle = ( TraceEventHandle_t ) pxEventData;
 
-	/* We need to check this */
-	if (xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT) == 0U)
-	{
-		return TRC_FAIL;
-	}
+        return TRC_SUCCESS;
+    }
 
-	/* This should never fail */
-	TRC_ASSERT(pxEventHandle != (void*)0);
+    traceResult xTraceEventBeginRawOfflineBlocking( uint32_t uiSize,
+                                                    TraceEventHandle_t * pxEventHandle )
+    {
+        TraceEventData_t * pxEventData;
+        TraceCoreEventData_t * pxCoreEventData;
+        int32_t ISR_nesting = 0;
+        uint32_t uiAttempts = 0u;
 
-	TRACE_ENTER_CRITICAL_SECTION();
+        TRACE_ALLOC_CRITICAL_SECTION();
 
-	pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventCounter++;
+        /* We need to check this */
+        if( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) == 0U )
+        {
+            return TRC_FAIL;
+        }
 
-	pxCoreEventData = &pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()];
+        /* This should never fail */
+        TRC_ASSERT( pxEventHandle != ( void * ) 0 );
 
-	/* We backup the local variable to the CORE specific variable */
-	pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME = TRACE_ALLOC_CRITICAL_SECTION_NAME;
+        TRACE_ENTER_CRITICAL_SECTION();
 
-	(void)xTraceGetCurrentISRNesting(&ISR_nesting);
+        pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventCounter++;
 
-	/* We add 1 since xTraceISRGetCurrentNesting(...) returns -1 if no ISR is active */
-	pxEventData = &pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()].eventData[ISR_nesting + 1];
+        pxCoreEventData = &pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ];
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData->pvBlob == 0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        /* We backup the local variable to the CORE specific variable */
+        pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME = TRACE_ALLOC_CRITICAL_SECTION_NAME;
 
-	VERIFY_EVENT_SIZE(uiSize); /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
+        ( void ) xTraceGetCurrentISRNesting( &ISR_nesting );
 
-	pxEventData->size = ((uiSize + (sizeof(TraceUnsignedBaseType_t) - 1u)) / sizeof(TraceUnsignedBaseType_t)) * sizeof(TraceUnsignedBaseType_t);	/* BaseType align */
+        /* We add 1 since xTraceISRGetCurrentNesting(...) returns -1 if no ISR is active */
+        pxEventData = &pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ].eventData[ ISR_nesting + 1 ];
 
-	pxEventData->offset = 0u;
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData->pvBlob == 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	/* This can fail and we should handle it */
-	while (xTraceStreamPortAllocate(pxEventData->size, &pxEventData->pvBlob) != TRC_SUCCESS)
-	{
-		uiAttempts++;
-	}
+                                   );
 
-	*pxEventHandle = (TraceEventHandle_t)pxEventData;
+        VERIFY_EVENT_SIZE( uiSize );                                                                                                                             /*cstat !MISRAC2012-Rule-17.8 Suppress modified function parameter check*/
 
-	return TRC_SUCCESS;
-}
+        pxEventData->size = ( ( uiSize + ( sizeof( TraceUnsignedBaseType_t ) - 1u ) ) / sizeof( TraceUnsignedBaseType_t ) ) * sizeof( TraceUnsignedBaseType_t ); /* BaseType align */
 
-traceResult xTraceEventEndOffline(TraceEventHandle_t xEventHandle)
-{
-	TraceEventData_t* pxEventData = (TraceEventData_t*)xEventHandle;
-	const TraceCoreEventData_t* pxCoreEventData;
-	int32_t iBytesCommitted = 0;
+        pxEventData->offset = 0u;
 
-	TRACE_ALLOC_CRITICAL_SECTION()
+        /* This can fail and we should handle it */
+        while( xTraceStreamPortAllocate( pxEventData->size, &pxEventData->pvBlob ) != TRC_SUCCESS )
+        {
+            uiAttempts++;
+        }
 
-	pxCoreEventData = &pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()];
+        *pxEventHandle = ( TraceEventHandle_t ) pxEventData;
 
-	/* We restore the CORE specific variable to the local variable before any EXIT */
-	TRACE_ALLOC_CRITICAL_SECTION_NAME = pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME;
+        return TRC_SUCCESS;
+    }
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT), TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+    traceResult xTraceEventEndOffline( TraceEventHandle_t xEventHandle )
+    {
+        TraceEventData_t * pxEventData = ( TraceEventData_t * ) xEventHandle;
+        const TraceCoreEventData_t * pxCoreEventData;
+        int32_t iBytesCommitted = 0;
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData != (void*)0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        TRACE_ALLOC_CRITICAL_SECTION()
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData->pvBlob != (void*)0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        pxCoreEventData = &pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ];
 
-	(void)xTraceStreamPortCommit(pxEventData->pvBlob, pxEventData->size, &iBytesCommitted);
+        /* We restore the CORE specific variable to the local variable before any EXIT */
+        TRACE_ALLOC_CRITICAL_SECTION_NAME = pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME;
 
-	/* We need to use iBytesCommitted for the above call but do not use the value,
-	 * remove potential warnings */
-	(void)iBytesCommitted;
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ), TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	RESET_EVENT_DATA(pxEventData);
+                                   );
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData != ( void * ) 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	return TRC_SUCCESS;
-}
+                                   );
 
-traceResult xTraceEventEndOfflineBlocking(TraceEventHandle_t xEventHandle)
-{
-	TraceEventData_t* pxEventData = (TraceEventData_t*)xEventHandle;
-	const TraceCoreEventData_t* pxCoreEventData;
-	int32_t iBytesCommitted;
-	uint32_t uiByteOffset = 0u;
-	uint8_t *pubBlob;
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData->pvBlob != ( void * ) 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	TRACE_ALLOC_CRITICAL_SECTION()
+                                   );
 
-	pxCoreEventData = &pxTraceEventDataTable->coreEventData[TRC_CFG_GET_CURRENT_CORE()];
+        ( void ) xTraceStreamPortCommit( pxEventData->pvBlob, pxEventData->size, &iBytesCommitted );
 
-	/* We restore the CORE specific variable to the local variable before any EXIT */
-	TRACE_ALLOC_CRITICAL_SECTION_NAME = pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME;
+        /* We need to use iBytesCommitted for the above call but do not use the value,
+         * remove potential warnings */
+        ( void ) iBytesCommitted;
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT), TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        RESET_EVENT_DATA( pxEventData );
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData != (void*)0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
+        TRACE_EXIT_CRITICAL_SECTION();
 
-	/* This should never fail */
-	TRC_ASSERT_CUSTOM_ON_FAIL(pxEventData->pvBlob != (void*)0, TRACE_EXIT_CRITICAL_SECTION(); return TRC_FAIL; );
-	
-	pubBlob = (uint8_t*)pxEventData->pvBlob; /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
+        return TRC_SUCCESS;
+    }
 
-	while (pxEventData->size > uiByteOffset)
-	{
-		iBytesCommitted = 0;
-		(void)xTraceStreamPortCommit((void*)&pubBlob[uiByteOffset], pxEventData->size - uiByteOffset, &iBytesCommitted); /*cstat !MISRAC2004-17.4_b We need to access a specific part of the buffer*/
+    traceResult xTraceEventEndOfflineBlocking( TraceEventHandle_t xEventHandle )
+    {
+        TraceEventData_t * pxEventData = ( TraceEventData_t * ) xEventHandle;
+        const TraceCoreEventData_t * pxCoreEventData;
+        int32_t iBytesCommitted;
+        uint32_t uiByteOffset = 0u;
+        uint8_t * pubBlob;
 
-		uiByteOffset += (uint32_t)iBytesCommitted;
-	}
+        TRACE_ALLOC_CRITICAL_SECTION()
 
-	RESET_EVENT_DATA(pxEventData);
+        pxCoreEventData = &pxTraceEventDataTable->coreEventData[ TRC_CFG_GET_CURRENT_CORE() ];
 
-	TRACE_EXIT_CRITICAL_SECTION();
+        /* We restore the CORE specific variable to the local variable before any EXIT */
+        TRACE_ALLOC_CRITICAL_SECTION_NAME = pxCoreEventData->TRACE_ALLOC_CRITICAL_SECTION_NAME;
 
-	return TRC_SUCCESS;
-}
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ), TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-traceResult xTraceEventAddData(TraceEventHandle_t xEventHandle, const TraceUnsignedBaseType_t* const puxData, TraceUnsignedBaseType_t uxSize)
-{
-	TraceUnsignedBaseType_t i;
+                                   );
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData != ( void * ) 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+                                   );
 
-	/* This should never fail */
-	TRC_ASSERT(puxData != (void*)0);
+        /* This should never fail */
+        TRC_ASSERT_CUSTOM_ON_FAIL( pxEventData->pvBlob != ( void * ) 0, TRACE_EXIT_CRITICAL_SECTION();
+                                   return TRC_FAIL;
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + (uint32_t)(uxSize * sizeof(TraceUnsignedBaseType_t))) <= ((TraceEventData_t*)xEventHandle)->size);
+                                   );
 
-	for (i = 0u; i < uxSize; i++)
-	{
-		TRC_EVENT_ADD_UNSIGNED_BASE_TYPE(xEventHandle, puxData[i]); /*cstat !MISRAC2004-17.4_b We need to access a specific part of the buffer*/
-	}
+        pubBlob = ( uint8_t * ) pxEventData->pvBlob; /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	return TRC_SUCCESS;
-}
+        while( pxEventData->size > uiByteOffset )
+        {
+            iBytesCommitted = 0;
+            ( void ) xTraceStreamPortCommit( ( void * ) &pubBlob[ uiByteOffset ], pxEventData->size - uiByteOffset, &iBytesCommitted ); /*cstat !MISRAC2004-17.4_b We need to access a specific part of the buffer*/
 
-#if ((TRC_CFG_USE_TRACE_ASSERT) == 1)
+            uiByteOffset += ( uint32_t ) iBytesCommitted;
+        }
 
-traceResult xTraceEventGetSize(const void* const pvAddress, uint32_t* puiSize)
-{
-	/* This should never fail */
-	TRC_ASSERT(pvAddress != (void*)0);
-	
-	/* This should never fail */
-	TRC_ASSERT(puiSize != (void*)0);
+        RESET_EVENT_DATA( pxEventData );
 
-	/* This should never fail */
-	TRC_ASSERT((sizeof(TraceEvent0_t) + ((uint32_t)(uint16_t)(TRC_EVENT_GET_PARAM_COUNT(((const TraceEvent0_t*)pvAddress)->EventID)) * sizeof(uint32_t))) <= (uint32_t)(TRC_MAX_BLOB_SIZE)); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
-	
-	return TRC_EVENT_GET_SIZE(pvAddress, puiSize);
-}
+        TRACE_EXIT_CRITICAL_SECTION();
 
-traceResult xTraceEventGetRawData(TraceEventHandle_t xEventHandle, uint32_t uiOffset, uint32_t uiSize, void** ppvData)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+        return TRC_SUCCESS;
+    }
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+    traceResult xTraceEventAddData( TraceEventHandle_t xEventHandle,
+                                    const TraceUnsignedBaseType_t * const puxData,
+                                    TraceUnsignedBaseType_t uxSize )
+    {
+        TraceUnsignedBaseType_t i;
 
-	/* This should never fail */
-	TRC_ASSERT(ppvData != (void*)0);
+        /* This should never fail */
+        TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	/* This should never fail */
-	TRC_ASSERT((uiOffset + uiSize) <= ((TraceEventData_t*)xEventHandle)->size);
+        /* This should never fail */
+        TRC_ASSERT( xEventHandle != 0 );
 
-	return TRC_EVENT_GET_RAW_DATA(xEventHandle, uiOffset, uiSize, ppvData);
-}
+        /* This should never fail */
+        TRC_ASSERT( puxData != ( void * ) 0 );
 
-traceResult xTraceEventGetPayload(const TraceEventHandle_t xEventHandle, uint32_t uiOffset, uint32_t uiSize, void** ppvData)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+        /* This should never fail */
+        TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + ( uint32_t ) ( uxSize * sizeof( TraceUnsignedBaseType_t ) ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+        for( i = 0u; i < uxSize; i++ )
+        {
+            TRC_EVENT_ADD_UNSIGNED_BASE_TYPE( xEventHandle, puxData[ i ] ); /*cstat !MISRAC2004-17.4_b We need to access a specific part of the buffer*/
+        }
 
-	/* This should never fail */
-	TRC_ASSERT(ppvData != (void*)0);
+        return TRC_SUCCESS;
+    }
 
-	/* This should never fail */
-	TRC_ASSERT((uiOffset + uiSize) <= ((const TraceEventData_t*)xEventHandle)->size);
+        #if ( ( TRC_CFG_USE_TRACE_ASSERT ) == 1 )
 
-	return TRC_EVENT_GET_PAYLOAD(xEventHandle, uiOffset, uiSize, ppvData);
-}
+        traceResult xTraceEventGetSize( const void * const pvAddress,
+                                        uint32_t * puiSize )
+        {
+            /* This should never fail */
+            TRC_ASSERT( pvAddress != ( void * ) 0 );
 
-traceResult xTraceEventPayloadRemaining(const TraceEventHandle_t xEventHandle, uint32_t* puiValue)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( puiSize != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( sizeof( TraceEvent0_t ) + ( ( uint32_t ) ( uint16_t ) ( TRC_EVENT_GET_PARAM_COUNT( ( ( const TraceEvent0_t * ) pvAddress )->EventID ) ) * sizeof( uint32_t ) ) ) <= ( uint32_t ) ( TRC_MAX_BLOB_SIZE ) ); /*cstat !MISRAC2012-Rule-11.5 Suppress pointer checks*/
 
-	/* This should never fail */
-	TRC_ASSERT(puiValue != (void*)0);
+            return TRC_EVENT_GET_SIZE( pvAddress, puiSize );
+        }
 
-	/* This should never fail */
-	TRC_ASSERT(((const TraceEventData_t*)xEventHandle)->pvBlob != (void*)0);
+        traceResult xTraceEventGetRawData( TraceEventHandle_t xEventHandle,
+                                           uint32_t uiOffset,
+                                           uint32_t uiSize,
+                                           void ** ppvData )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_PAYLOAD_REMAINING(xEventHandle, puiValue);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventPayloadUsed(const TraceEventHandle_t xEventHandle, uint32_t* puiValue)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( ppvData != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( uiOffset + uiSize ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
 
-	/* This should never fail */
-	TRC_ASSERT(puiValue != (void*)0);
+            return TRC_EVENT_GET_RAW_DATA( xEventHandle, uiOffset, uiSize, ppvData );
+        }
 
-	/* This should never fail */
-	TRC_ASSERT(((const TraceEventData_t*)xEventHandle)->pvBlob != (void*)0);
+        traceResult xTraceEventGetPayload( const TraceEventHandle_t xEventHandle,
+                                           uint32_t uiOffset,
+                                           uint32_t uiSize,
+                                           void ** ppvData )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_PAYLOAD_USED(xEventHandle, puiValue);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventPayloadSize(const TraceEventHandle_t xEventHandle, uint32_t* puiValue)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( ppvData != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( uiOffset + uiSize ) <= ( ( const TraceEventData_t * ) xEventHandle )->size );
 
-	/* This should never fail */
-	TRC_ASSERT(puiValue != (void*)0);
+            return TRC_EVENT_GET_PAYLOAD( xEventHandle, uiOffset, uiSize, ppvData );
+        }
 
-	/* This should never fail */
-	TRC_ASSERT(((const TraceEventData_t*)xEventHandle)->pvBlob != (void*)0);
+        traceResult xTraceEventPayloadRemaining( const TraceEventHandle_t xEventHandle,
+                                                 uint32_t * puiValue )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_PAYLOAD_SIZE(xEventHandle, puiValue);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventAddPointer(TraceEventHandle_t xEventHandle, void* pvAddress)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( puiValue != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( ( const TraceEventData_t * ) xEventHandle )->pvBlob != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + sizeof(void*)) <= ((TraceEventData_t*)xEventHandle)->size);
+            return TRC_EVENT_PAYLOAD_REMAINING( xEventHandle, puiValue );
+        }
 
-	/* Make sure we are writing at void* aligned offset */
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset & (sizeof(void*) - 1u)) == 0u);
+        traceResult xTraceEventPayloadUsed( const TraceEventHandle_t xEventHandle,
+                                            uint32_t * puiValue )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_ADD_POINTER(xEventHandle, pvAddress);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventAddUnsignedBaseType(TraceEventHandle_t xEventHandle, TraceUnsignedBaseType_t uxValue)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( puiValue != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( ( const TraceEventData_t * ) xEventHandle )->pvBlob != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + sizeof(TraceUnsignedBaseType_t)) <= ((TraceEventData_t*)xEventHandle)->size);
+            return TRC_EVENT_PAYLOAD_USED( xEventHandle, puiValue );
+        }
 
-	/* Make sure we are writing at TraceUnsignedBaseType_t aligned offset */
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset & (sizeof(TraceUnsignedBaseType_t) - 1u)) == 0u);
+        traceResult xTraceEventPayloadSize( const TraceEventHandle_t xEventHandle,
+                                            uint32_t * puiValue )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_ADD_UNSIGNED_BASE_TYPE(xEventHandle, uxValue);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventAdd32(TraceEventHandle_t xEventHandle, uint32_t value)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( puiValue != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* This should never fail */
+            TRC_ASSERT( ( ( const TraceEventData_t * ) xEventHandle )->pvBlob != ( void * ) 0 );
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + sizeof(uint32_t)) <= ((TraceEventData_t*)xEventHandle)->size);
+            return TRC_EVENT_PAYLOAD_SIZE( xEventHandle, puiValue );
+        }
 
-	/* Make sure we are writing at 32-bit aligned offset */
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset & 3u) == 0u);
+        traceResult xTraceEventAddPointer( TraceEventHandle_t xEventHandle,
+                                           void * pvAddress )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_ADD_32(xEventHandle, value);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventAdd16(TraceEventHandle_t xEventHandle, uint16_t value)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + sizeof( void * ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* Make sure we are writing at void* aligned offset */
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset & ( sizeof( void * ) - 1u ) ) == 0u );
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + sizeof(uint16_t)) <= ((TraceEventData_t*)xEventHandle)->size);
+            return TRC_EVENT_ADD_POINTER( xEventHandle, pvAddress );
+        }
 
-	/* Make sure we are writing at 16-bit aligned offset */
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset & 1u) == 0u);
+        traceResult xTraceEventAddUnsignedBaseType( TraceEventHandle_t xEventHandle,
+                                                    TraceUnsignedBaseType_t uxValue )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-	return TRC_EVENT_ADD_16(xEventHandle, value);
-}
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-traceResult xTraceEventAdd8(TraceEventHandle_t xEventHandle, uint8_t value)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_EVENT));
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + sizeof( TraceUnsignedBaseType_t ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
 
-	/* This should never fail */
-	TRC_ASSERT(xEventHandle != 0);
+            /* Make sure we are writing at TraceUnsignedBaseType_t aligned offset */
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset & ( sizeof( TraceUnsignedBaseType_t ) - 1u ) ) == 0u );
 
-	/* This should never fail */
-	TRC_ASSERT((((TraceEventData_t*)xEventHandle)->offset + sizeof(uint8_t)) <= ((TraceEventData_t*)xEventHandle)->size);
+            return TRC_EVENT_ADD_UNSIGNED_BASE_TYPE( xEventHandle, uxValue );
+        }
 
-	return TRC_EVENT_ADD_8(xEventHandle, value);
-}
+        traceResult xTraceEventAdd32( TraceEventHandle_t xEventHandle,
+                                      uint32_t value )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
 
-#endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
 
-#endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + sizeof( uint32_t ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
+
+            /* Make sure we are writing at 32-bit aligned offset */
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset & 3u ) == 0u );
+
+            return TRC_EVENT_ADD_32( xEventHandle, value );
+        }
+
+        traceResult xTraceEventAdd16( TraceEventHandle_t xEventHandle,
+                                      uint16_t value )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
+
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
+
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + sizeof( uint16_t ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
+
+            /* Make sure we are writing at 16-bit aligned offset */
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset & 1u ) == 0u );
+
+            return TRC_EVENT_ADD_16( xEventHandle, value );
+        }
+
+        traceResult xTraceEventAdd8( TraceEventHandle_t xEventHandle,
+                                     uint8_t value )
+        {
+            /* This should never fail */
+            TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_EVENT ) );
+
+            /* This should never fail */
+            TRC_ASSERT( xEventHandle != 0 );
+
+            /* This should never fail */
+            TRC_ASSERT( ( ( ( TraceEventData_t * ) xEventHandle )->offset + sizeof( uint8_t ) ) <= ( ( TraceEventData_t * ) xEventHandle )->size );
+
+            return TRC_EVENT_ADD_8( xEventHandle, value );
+        }
+
+        #endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
+
+    #endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
 
 #endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */

@@ -17,6 +17,6 @@
 /**
  * @brief Get all network stats.
  */
-//void netstat_get_all_stats( all_stats_t * p_all_stats );
+/*void netstat_get_all_stats( all_stats_t * p_all_stats ); */
 
 #endif /* NETSTAT_NETSTAT_CAPTURE_H_ */

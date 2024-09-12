@@ -1,31 +1,31 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
- * @file 
- * 
+ * @file
+ *
  * @brief Public trace interval APIs.
  */
 
 #ifndef TRC_INTERVAL_H
-#define TRC_INTERVAL_H
+    #define TRC_INTERVAL_H
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+    #if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+        #ifdef __cplusplus
+        extern "C" {
+        #endif
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+        #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#include <trcTypes.h>
+            #include <trcTypes.h>
 
-#define TRC_INTERVAL_CHANNEL_SET_INDEX 0u
+            #define TRC_INTERVAL_CHANNEL_SET_INDEX    0u
 
 /**
  * @defgroup trace_interval_apis Trace Interval APIs
@@ -35,96 +35,102 @@ extern "C" {
 
 /**
  * @brief Creates trace interval channel set.
- * 
+ *
  * @param[in] szName Name.
  * @param[out] pxIntervalChannelSetHandle Pointer to uninitialized trace interval channel set.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-	traceResult xTraceIntervalChannelSetCreate(const char* szName, TraceIntervalChannelSetHandle_t* pxIntervalChannelSetHandle);
+            traceResult xTraceIntervalChannelSetCreate( const char * szName,
+                                                        TraceIntervalChannelSetHandle_t * pxIntervalChannelSetHandle );
 
 /**
  * @brief Creates trace interval channel.
- * 
+ *
  * @param[in] szName Name.
  * @param[in] xIntervalChannelSetHandle Interval set that this channel belongs to.
  * @param[out] pxIntervalChannelHandle Pointer to uninitialized trace interval channel.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceIntervalChannelCreate(const char *szName, TraceIntervalChannelSetHandle_t xIntervalChannelSetHandle, TraceIntervalChannelHandle_t *pxIntervalChannelHandle);
+            traceResult xTraceIntervalChannelCreate( const char * szName,
+                                                     TraceIntervalChannelSetHandle_t xIntervalChannelSetHandle,
+                                                     TraceIntervalChannelHandle_t * pxIntervalChannelHandle );
 
 /**
  * @brief Starts trace interval instance.
- * 
+ *
  * @param[in] xIntervalChannelHandle Interval handle.
  * @param[in] uxValue Value that can be used to tell instances apart.
  * @param[out] pxIntervalInstanceHandle Pointer to interval instance variable.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceIntervalStart(TraceIntervalChannelHandle_t xIntervalChannelHandle, TraceUnsignedBaseType_t uxValue, TraceIntervalInstanceHandle_t* pxIntervalInstanceHandle);
+            traceResult xTraceIntervalStart( TraceIntervalChannelHandle_t xIntervalChannelHandle,
+                                             TraceUnsignedBaseType_t uxValue,
+                                             TraceIntervalInstanceHandle_t * pxIntervalInstanceHandle );
 
 /**
  * @brief Stops trace interval instance.
- * 
+ *
  * @param[in] xIntervalChannelHandle Interval handle.
  * @param[in] xIntervalInstanceHandle Interval instance.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceIntervalStop(TraceIntervalChannelHandle_t xIntervalChannelHandle, TraceIntervalInstanceHandle_t xIntervalInstanceHandle);
+            traceResult xTraceIntervalStop( TraceIntervalChannelHandle_t xIntervalChannelHandle,
+                                            TraceIntervalInstanceHandle_t xIntervalInstanceHandle );
 
 /**
  * @brief Gets trace interval channel state.
- * 
+ *
  * @param[in] xIntervalChannelHandle Pointer to initialized trace interval.
  * @param[out] puxState State.
- * 
+ *
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-#define xTraceIntervalGetState(xIntervalChannelHandle, puxState) xTraceEntryGetState((TraceEntryHandle_t)(xIntervalChannelHandle), TRC_INTERVAL_CHANNEL_SET_INDEX, puxState)
+            #define xTraceIntervalGetState( xIntervalChannelHandle, puxState )    xTraceEntryGetState( ( TraceEntryHandle_t ) ( xIntervalChannelHandle ), TRC_INTERVAL_CHANNEL_SET_INDEX, puxState )
 
 /** @} */
 
-#else
+        #else  /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceIntervalChannelSetCreate(__szName, __pxIntervalChannelSetHandle) ((void)(__szName), *(__pxIntervalChannelSetHandle) = 0, TRC_SUCCESS)
+            #define xTraceIntervalChannelSetCreate( __szName, __pxIntervalChannelSetHandle )                           ( ( void ) ( __szName ), *( __pxIntervalChannelSetHandle ) = 0, TRC_SUCCESS )
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceIntervalChannelCreate(__szName, __xIntervalChannelSetHandle, __pxIntervalChannelHandle) ((void)(__szName), (void)(__xIntervalChannelSetHandle), *(__pxIntervalChannelHandle) = 0, TRC_SUCCESS)
+            #define xTraceIntervalChannelCreate( __szName, __xIntervalChannelSetHandle, __pxIntervalChannelHandle )    ( ( void ) ( __szName ), ( void ) ( __xIntervalChannelSetHandle ), *( __pxIntervalChannelHandle ) = 0, TRC_SUCCESS )
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceIntervalStart(__xIntervalHandle, __uxValue, __pxIntervalInstanceHandle) ((void)(__xIntervalHandle), (void)(__uxValue), *(__pxIntervalInstanceHandle) = 0, TRC_SUCCESS)
-
- /**
-  * @brief Disabled by TRC_CFG_RECORDER_MODE
-  */
-#define xTraceIntervalStop(__xIntervalHandle, __xIntervalInstanceHandle) ((void)(__xIntervalHandle), (void)(__xIntervalInstanceHandle), TRC_SUCCESS)
+            #define xTraceIntervalStart( __xIntervalHandle, __uxValue, __pxIntervalInstanceHandle )                    ( ( void ) ( __xIntervalHandle ), ( void ) ( __uxValue ), *( __pxIntervalInstanceHandle ) = 0, TRC_SUCCESS )
 
 /**
  * @brief Disabled by TRC_CFG_RECORDER_MODE
  */
-#define xTraceIntervalGetState(__xIntervalHandle, __puxState) ((void)(__xIntervalHandle), *(__puxState) = 0, TRC_SUCCESS)
+            #define xTraceIntervalStop( __xIntervalHandle, __xIntervalInstanceHandle )                                 ( ( void ) ( __xIntervalHandle ), ( void ) ( __xIntervalInstanceHandle ), TRC_SUCCESS )
 
-#endif
+/**
+ * @brief Disabled by TRC_CFG_RECORDER_MODE
+ */
+            #define xTraceIntervalGetState( __xIntervalHandle, __puxState )                                            ( ( void ) ( __xIntervalHandle ), *( __puxState ) = 0, TRC_SUCCESS )
 
-#ifdef __cplusplus
+        #endif /* if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING ) */
+
+        #ifdef __cplusplus
 }
-#endif
+        #endif
 
-#endif
+    #endif /* if ( TRC_USE_TRACEALYZER_RECORDER == 1 ) */
 
-#endif
+#endif /* ifndef TRC_INTERVAL_H */

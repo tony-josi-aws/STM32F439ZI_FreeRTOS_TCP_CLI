@@ -1,211 +1,213 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*
-* The implementation for the stack monitor.
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The implementation for the stack monitor.
+ */
 
 #include <trcRecorder.h>
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+#if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+    #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#if (((TRC_CFG_ENABLE_STACK_MONITOR) == 1) && ((TRC_CFG_SCHEDULING_ONLY) == 0))
+        #if ( ( ( TRC_CFG_ENABLE_STACK_MONITOR ) == 1 ) && ( ( TRC_CFG_SCHEDULING_ONLY ) == 0 ) )
 
-#ifndef TRC_CFG_ALLOW_TASK_DELETE
-#define TRC_CFG_ALLOW_TASK_DELETE 1
-#endif
+            #ifndef TRC_CFG_ALLOW_TASK_DELETE
+                #define TRC_CFG_ALLOW_TASK_DELETE    1
+            #endif
 
-static TraceStackMonitorData_t* pxStackMonitor TRC_CFG_RECORDER_DATA_ATTRIBUTE;
+            static TraceStackMonitorData_t * pxStackMonitor TRC_CFG_RECORDER_DATA_ATTRIBUTE;
 
-traceResult xTraceStackMonitorInitialize(TraceStackMonitorData_t *pxBuffer)
-{
-	uint32_t i;
-	
-	/* This should never fail */
-	TRC_ASSERT(pxBuffer != 0);
+            traceResult xTraceStackMonitorInitialize( TraceStackMonitorData_t * pxBuffer )
+            {
+                uint32_t i;
 
-	pxStackMonitor = pxBuffer;
+                /* This should never fail */
+                TRC_ASSERT( pxBuffer != 0 );
 
-	pxStackMonitor->uxEntryCount = 0;
+                pxStackMonitor = pxBuffer;
 
-	for (i = 0; i < (TRC_CFG_STACK_MONITOR_MAX_TASKS); i++)
-	{
-		pxStackMonitor->xEntries[i].pvTask = 0;
-	}
-	
-	xTraceSetComponentInitialized(TRC_RECORDER_COMPONENT_STACK_MONITOR);
+                pxStackMonitor->uxEntryCount = 0;
 
-	return TRC_SUCCESS;
-}
+                for( i = 0; i < ( TRC_CFG_STACK_MONITOR_MAX_TASKS ); i++ )
+                {
+                    pxStackMonitor->xEntries[ i ].pvTask = 0;
+                }
 
-traceResult xTraceStackMonitorAdd(void *pvTask)
-{
-	TraceUnsignedBaseType_t uxLowMark = 0;
-	
-	TRACE_ALLOC_CRITICAL_SECTION();
-	
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_STACK_MONITOR));
+                xTraceSetComponentInitialized( TRC_RECORDER_COMPONENT_STACK_MONITOR );
 
-	if (pvTask == 0)
-	{
-		/* We don't add null addresses */
-		return TRC_FAIL;
-	}
-	
-	TRACE_ENTER_CRITICAL_SECTION();
+                return TRC_SUCCESS;
+            }
 
-	if (pxStackMonitor->uxEntryCount >= (TRC_CFG_STACK_MONITOR_MAX_TASKS))
-	{
-		xTraceDiagnosticsIncrease(TRC_DIAGNOSTICS_STACK_MONITOR_NO_SLOTS);
-		
-		TRACE_EXIT_CRITICAL_SECTION();
-		
-		return TRC_FAIL;
-	}
+            traceResult xTraceStackMonitorAdd( void * pvTask )
+            {
+                TraceUnsignedBaseType_t uxLowMark = 0;
 
-	if (xTraceKernelPortGetUnusedStack(pvTask, &uxLowMark) == TRC_SUCCESS)
-	{
-		pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount].pvTask = pvTask;
-		pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount].uxPreviousLowWaterMark = uxLowMark;
+                TRACE_ALLOC_CRITICAL_SECTION();
 
-		pxStackMonitor->uxEntryCount++;
-	}
-	
-	TRACE_EXIT_CRITICAL_SECTION();
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_STACK_MONITOR ) );
 
-	return TRC_SUCCESS;
-}
+                if( pvTask == 0 )
+                {
+                    /* We don't add null addresses */
+                    return TRC_FAIL;
+                }
 
-traceResult xTraceStackMonitorRemove(void* pvTask)
-{
-	uint32_t i;
+                TRACE_ENTER_CRITICAL_SECTION();
 
-	TRACE_ALLOC_CRITICAL_SECTION();
+                if( pxStackMonitor->uxEntryCount >= ( TRC_CFG_STACK_MONITOR_MAX_TASKS ) )
+                {
+                    xTraceDiagnosticsIncrease( TRC_DIAGNOSTICS_STACK_MONITOR_NO_SLOTS );
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_STACK_MONITOR));
+                    TRACE_EXIT_CRITICAL_SECTION();
 
-	if (pvTask == 0)
-	{
-		/* We don't add null addresses */
-		return TRC_FAIL;
-	}
+                    return TRC_FAIL;
+                }
 
-	TRACE_ENTER_CRITICAL_SECTION();
+                if( xTraceKernelPortGetUnusedStack( pvTask, &uxLowMark ) == TRC_SUCCESS )
+                {
+                    pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount ].pvTask = pvTask;
+                    pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount ].uxPreviousLowWaterMark = uxLowMark;
 
-	for (i = 0; i < pxStackMonitor->uxEntryCount; i++)
-	{
-		if (pxStackMonitor->xEntries[i].pvTask == pvTask)
-		{
-			if (pxStackMonitor->uxEntryCount > 1 && i != (pxStackMonitor->uxEntryCount - 1))
-			{
-				/* There are more entries and this is NOT the last entry. Move last entry to this slot. */
-				pxStackMonitor->xEntries[i].pvTask = pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount - 1].pvTask;
-				pxStackMonitor->xEntries[i].uxPreviousLowWaterMark = pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount - 1].uxPreviousLowWaterMark;
+                    pxStackMonitor->uxEntryCount++;
+                }
 
-				/* Clear old entry that was moved */
-				pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount - 1].pvTask = 0;
-				pxStackMonitor->xEntries[pxStackMonitor->uxEntryCount - 1].uxPreviousLowWaterMark = 0;
-			}
-			else
-			{
-				/* No other entries or last entry. */
-				pxStackMonitor->xEntries[i].pvTask = 0;
-				pxStackMonitor->xEntries[i].uxPreviousLowWaterMark = 0;
-			}
+                TRACE_EXIT_CRITICAL_SECTION();
 
-			pxStackMonitor->uxEntryCount--;
+                return TRC_SUCCESS;
+            }
 
-			TRACE_EXIT_CRITICAL_SECTION();
+            traceResult xTraceStackMonitorRemove( void * pvTask )
+            {
+                uint32_t i;
 
-			return TRC_SUCCESS;
-		}
-	}
+                TRACE_ALLOC_CRITICAL_SECTION();
 
-	TRACE_EXIT_CRITICAL_SECTION();
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_STACK_MONITOR ) );
 
-	return TRC_FAIL;
-}
+                if( pvTask == 0 )
+                {
+                    /* We don't add null addresses */
+                    return TRC_FAIL;
+                }
 
-traceResult xTraceStackMonitorGetAtIndex(uint32_t uiIndex, void **ppvTask, TraceUnsignedBaseType_t *puxLowWaterMark)
-{
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_STACK_MONITOR));
+                TRACE_ENTER_CRITICAL_SECTION();
 
-	/* This should never fail */
-	TRC_ASSERT(ppvTask != 0);
+                for( i = 0; i < pxStackMonitor->uxEntryCount; i++ )
+                {
+                    if( pxStackMonitor->xEntries[ i ].pvTask == pvTask )
+                    {
+                        if( ( pxStackMonitor->uxEntryCount > 1 ) && ( i != ( pxStackMonitor->uxEntryCount - 1 ) ) )
+                        {
+                            /* There are more entries and this is NOT the last entry. Move last entry to this slot. */
+                            pxStackMonitor->xEntries[ i ].pvTask = pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount - 1 ].pvTask;
+                            pxStackMonitor->xEntries[ i ].uxPreviousLowWaterMark = pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount - 1 ].uxPreviousLowWaterMark;
 
-	/* This should never fail */
-	TRC_ASSERT(puxLowWaterMark != 0);
+                            /* Clear old entry that was moved */
+                            pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount - 1 ].pvTask = 0;
+                            pxStackMonitor->xEntries[ pxStackMonitor->uxEntryCount - 1 ].uxPreviousLowWaterMark = 0;
+                        }
+                        else
+                        {
+                            /* No other entries or last entry. */
+                            pxStackMonitor->xEntries[ i ].pvTask = 0;
+                            pxStackMonitor->xEntries[ i ].uxPreviousLowWaterMark = 0;
+                        }
 
-	/* This should never fail */
-	TRC_ASSERT(uiIndex < (TRC_CFG_STACK_MONITOR_MAX_TASKS));
+                        pxStackMonitor->uxEntryCount--;
 
-	*ppvTask = pxStackMonitor->xEntries[uiIndex].pvTask;
-	*puxLowWaterMark = pxStackMonitor->xEntries[uiIndex].uxPreviousLowWaterMark;
+                        TRACE_EXIT_CRITICAL_SECTION();
 
-	return TRC_SUCCESS;
-}
+                        return TRC_SUCCESS;
+                    }
+                }
 
-traceResult xTraceStackMonitorReport(void)
-{
-	TraceUnsignedBaseType_t uxLowWaterMark = 0;
-	TraceStackMonitorEntry_t *pxStackMonitorEntry;
-	TraceUnsignedBaseType_t uxToReport;
-	TraceUnsignedBaseType_t i;
-	static uint32_t uiCurrentIndex = 0;
+                TRACE_EXIT_CRITICAL_SECTION();
 
-#if (TRC_CFG_ALLOW_TASK_DELETE == 1)
-	TRACE_ALLOC_CRITICAL_SECTION();
-#endif
+                return TRC_FAIL;
+            }
 
-	/* This should never fail */
-	TRC_ASSERT(xTraceIsComponentInitialized(TRC_RECORDER_COMPONENT_STACK_MONITOR));
+            traceResult xTraceStackMonitorGetAtIndex( uint32_t uiIndex,
+                                                      void ** ppvTask,
+                                                      TraceUnsignedBaseType_t * puxLowWaterMark )
+            {
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_STACK_MONITOR ) );
 
-#if (TRC_CFG_ALLOW_TASK_DELETE == 1)
-	TRACE_ENTER_CRITICAL_SECTION();
-#endif
+                /* This should never fail */
+                TRC_ASSERT( ppvTask != 0 );
 
-	/* Never report more than there are entries */
-	uxToReport = TRC_CFG_STACK_MONITOR_MAX_REPORTS <= pxStackMonitor->uxEntryCount ? TRC_CFG_STACK_MONITOR_MAX_REPORTS : pxStackMonitor->uxEntryCount;
+                /* This should never fail */
+                TRC_ASSERT( puxLowWaterMark != 0 );
 
-	for (i = 0; i < uxToReport; i++)
-	{
-		/* If uiCurrentIndex is too large, reset it */
-		uiCurrentIndex = uiCurrentIndex < pxStackMonitor->uxEntryCount ? uiCurrentIndex : 0;
-		
-		pxStackMonitorEntry = &pxStackMonitor->xEntries[uiCurrentIndex];
+                /* This should never fail */
+                TRC_ASSERT( uiIndex < ( TRC_CFG_STACK_MONITOR_MAX_TASKS ) );
 
-		if (xTraceKernelPortGetUnusedStack(pxStackMonitorEntry->pvTask, &uxLowWaterMark) != TRC_SUCCESS)
-		{
-			uiCurrentIndex++;
-			continue;
-		}
+                *ppvTask = pxStackMonitor->xEntries[ uiIndex ].pvTask;
+                *puxLowWaterMark = pxStackMonitor->xEntries[ uiIndex ].uxPreviousLowWaterMark;
 
-		if (uxLowWaterMark < pxStackMonitorEntry->uxPreviousLowWaterMark)
-		{
-			pxStackMonitorEntry->uxPreviousLowWaterMark = uxLowWaterMark;
-		}
+                return TRC_SUCCESS;
+            }
 
-		xTraceEventCreate2(PSF_EVENT_UNUSED_STACK, (TraceUnsignedBaseType_t)pxStackMonitorEntry->pvTask, pxStackMonitorEntry->uxPreviousLowWaterMark);
+            traceResult xTraceStackMonitorReport( void )
+            {
+                TraceUnsignedBaseType_t uxLowWaterMark = 0;
+                TraceStackMonitorEntry_t * pxStackMonitorEntry;
+                TraceUnsignedBaseType_t uxToReport;
+                TraceUnsignedBaseType_t i;
+                static uint32_t uiCurrentIndex = 0;
 
-		uiCurrentIndex++;
-	}
+                #if ( TRC_CFG_ALLOW_TASK_DELETE == 1 )
+                    TRACE_ALLOC_CRITICAL_SECTION();
+                #endif
 
-#if (TRC_CFG_ALLOW_TASK_DELETE == 1)
-	TRACE_EXIT_CRITICAL_SECTION();
-#endif
+                /* This should never fail */
+                TRC_ASSERT( xTraceIsComponentInitialized( TRC_RECORDER_COMPONENT_STACK_MONITOR ) );
 
-	return TRC_SUCCESS;
-}
-#endif /* (((TRC_CFG_ENABLE_STACK_MONITOR) == 1) && ((TRC_CFG_SCHEDULING_ONLY) == 0)) */
+                #if ( TRC_CFG_ALLOW_TASK_DELETE == 1 )
+                    TRACE_ENTER_CRITICAL_SECTION();
+                #endif
 
-#endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
+                /* Never report more than there are entries */
+                uxToReport = TRC_CFG_STACK_MONITOR_MAX_REPORTS <= pxStackMonitor->uxEntryCount ? TRC_CFG_STACK_MONITOR_MAX_REPORTS : pxStackMonitor->uxEntryCount;
+
+                for( i = 0; i < uxToReport; i++ )
+                {
+                    /* If uiCurrentIndex is too large, reset it */
+                    uiCurrentIndex = uiCurrentIndex < pxStackMonitor->uxEntryCount ? uiCurrentIndex : 0;
+
+                    pxStackMonitorEntry = &pxStackMonitor->xEntries[ uiCurrentIndex ];
+
+                    if( xTraceKernelPortGetUnusedStack( pxStackMonitorEntry->pvTask, &uxLowWaterMark ) != TRC_SUCCESS )
+                    {
+                        uiCurrentIndex++;
+                        continue;
+                    }
+
+                    if( uxLowWaterMark < pxStackMonitorEntry->uxPreviousLowWaterMark )
+                    {
+                        pxStackMonitorEntry->uxPreviousLowWaterMark = uxLowWaterMark;
+                    }
+
+                    xTraceEventCreate2( PSF_EVENT_UNUSED_STACK, ( TraceUnsignedBaseType_t ) pxStackMonitorEntry->pvTask, pxStackMonitorEntry->uxPreviousLowWaterMark );
+
+                    uiCurrentIndex++;
+                }
+
+                #if ( TRC_CFG_ALLOW_TASK_DELETE == 1 )
+                    TRACE_EXIT_CRITICAL_SECTION();
+                #endif
+
+                return TRC_SUCCESS;
+            }
+        #endif /* (((TRC_CFG_ENABLE_STACK_MONITOR) == 1) && ((TRC_CFG_SCHEDULING_ONLY) == 0)) */
+
+    #endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
 
 #endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */

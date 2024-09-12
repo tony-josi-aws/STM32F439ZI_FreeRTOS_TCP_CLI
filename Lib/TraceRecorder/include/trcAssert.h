@@ -1,29 +1,29 @@
 /*
-* Percepio Trace Recorder for Tracealyzer v4.8.0
-* Copyright 2023 Percepio AB
-* www.percepio.com
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Percepio Trace Recorder for Tracealyzer v4.8.0
+ * Copyright 2023 Percepio AB
+ * www.percepio.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
- * @file 
- * 
+ * @file
+ *
  * @brief Public trace assert APIs.
  */
 
 #ifndef TRC_ASSERT_H
-#define TRC_ASSERT_H
+    #define TRC_ASSERT_H
 
-#if (TRC_USE_TRACEALYZER_RECORDER == 1)
+    #if ( TRC_USE_TRACEALYZER_RECORDER == 1 )
 
-#if (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING)
+        #if ( TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING )
 
-#include <trcTypes.h>
+            #include <trcTypes.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+            #ifdef __cplusplus
+            extern "C" {
+            #endif
 
 /**
  * @defgroup trace_assert_apis Trace Asserts APIs
@@ -31,48 +31,48 @@ extern "C" {
  * @{
  */
 
-#ifndef TRC_CFG_USE_TRACE_ASSERT
-#error "TRC_CFG_USE_TRACE_ASSERT is not defined. Please define it in trcConfig.h"
-#endif
+            #ifndef TRC_CFG_USE_TRACE_ASSERT
+                #error "TRC_CFG_USE_TRACE_ASSERT is not defined. Please define it in trcConfig.h"
+            #endif
 
-#if ((TRC_CFG_USE_TRACE_ASSERT) == 1)
+            #if ( ( TRC_CFG_USE_TRACE_ASSERT ) == 1 )
 
 /* Standard assert */
-#define TRC_ASSERT(__condition) if (!(__condition)) { prvTraceAssertCreate(__FILE__, __LINE__); return TRC_FAIL; }
+                #define TRC_ASSERT( __condition )    if( !( __condition ) ) { prvTraceAssertCreate( __FILE__, __LINE__ ); return TRC_FAIL; }
 
-#define TRC_ASSERT_ALWAYS_EVALUATE TRC_ASSERT
+                #define TRC_ASSERT_ALWAYS_EVALUATE    TRC_ASSERT
 
 /* Standard assert with custom on fail actions */
-#define TRC_ASSERT_CUSTOM_ON_FAIL(__condition, __custom_on_fail) if (!(__condition)) { prvTraceAssertCreate(__FILE__, __LINE__); __custom_on_fail; }
+                #define TRC_ASSERT_CUSTOM_ON_FAIL( __condition, __custom_on_fail )    if( !( __condition ) ) { prvTraceAssertCreate( __FILE__, __LINE__ ); __custom_on_fail; }
 
-#define TRC_ASSERT_CUSTOM_ON_FAIL_ALWAYS_EVALUATE TRC_ASSERT_CUSTOM_ON_FAIL
+                #define TRC_ASSERT_CUSTOM_ON_FAIL_ALWAYS_EVALUATE    TRC_ASSERT_CUSTOM_ON_FAIL
 
-#if (defined(TRC_CFG_TEST_MODE) && (TRC_CFG_TEST_MODE) == 1)
+                #if ( defined( TRC_CFG_TEST_MODE ) && ( TRC_CFG_TEST_MODE ) == 1 )
 
 /* Asserts that two types have an equal size. Condition passed to function to avoid compilers warning about unreachable code due to constant value. */
-#define TRC_ASSERT_EQUAL_SIZE(x, y) if (!prvTraceAssertCheckCondition((TraceBaseType_t)(sizeof(x) == sizeof(y)))) { prvTraceAssertCreate(__FILE__, __LINE__); return TRC_FAIL; }
+                    #define TRC_ASSERT_EQUAL_SIZE( x, y )    if( !prvTraceAssertCheckCondition( ( TraceBaseType_t ) ( sizeof( x ) == sizeof( y ) ) ) ) { prvTraceAssertCreate( __FILE__, __LINE__ ); return TRC_FAIL; }
 
 /**
  * @brief Inlined condition check to get around some compiler warnings for unused variables.
  *
  * @param[in] condition The condition
  */
-inline TraceBaseType_t prvTraceAssertCheckCondition(TraceBaseType_t condition)
-{
-	return condition;
-}
+            inline TraceBaseType_t prvTraceAssertCheckCondition( TraceBaseType_t condition )
+            {
+                return condition;
+            }
 
-#else
+                #else  /* if ( defined( TRC_CFG_TEST_MODE ) && ( TRC_CFG_TEST_MODE ) == 1 ) */
 
-#define TRC_ASSERT_EQUAL_SIZE(x, y) 
+                    #define TRC_ASSERT_EQUAL_SIZE( x, y )
 
-#endif
+                #endif /* if ( defined( TRC_CFG_TEST_MODE ) && ( TRC_CFG_TEST_MODE ) == 1 ) */
 
 
-typedef struct TraceAssertData /* Aligned */
-{
-	TraceEntryHandle_t xEntry;
-} TraceAssertData_t;
+        typedef struct TraceAssertData /* Aligned */
+        {
+            TraceEntryHandle_t xEntry;
+        } TraceAssertData_t;
 
 /**
  * @internal Initializes assert system
@@ -82,7 +82,7 @@ typedef struct TraceAssertData /* Aligned */
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceAssertInitialize(TraceAssertData_t *pxBuffer);
+        traceResult xTraceAssertInitialize( TraceAssertData_t * pxBuffer );
 
 /**
  * @internal Creates an assert
@@ -93,7 +93,8 @@ traceResult xTraceAssertInitialize(TraceAssertData_t *pxBuffer);
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-void prvTraceAssertCreate(const char* szFilePath, TraceUnsignedBaseType_t uxLineNumber);
+        void prvTraceAssertCreate( const char * szFilePath,
+                                   TraceUnsignedBaseType_t uxLineNumber );
 
 /**
  * @brief Retrieves the assert and line number
@@ -104,39 +105,40 @@ void prvTraceAssertCreate(const char* szFilePath, TraceUnsignedBaseType_t uxLine
  * @retval TRC_FAIL Failure
  * @retval TRC_SUCCESS Success
  */
-traceResult xTraceAssertGet(TraceStringHandle_t* pxFileNameStringHandle, TraceUnsignedBaseType_t* puxLineNumber);
+        traceResult xTraceAssertGet( TraceStringHandle_t * pxFileNameStringHandle,
+                                     TraceUnsignedBaseType_t * puxLineNumber );
 
-#else /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
+            #else /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
 
-#define TRC_ASSERT(__condition) 
+                #define TRC_ASSERT( __condition )
 
-#define TRC_ASSERT_ALWAYS_EVALUATE(__condition) (void)(__condition)
+                #define TRC_ASSERT_ALWAYS_EVALUATE( __condition )    ( void ) ( __condition )
 
-#define TRC_ASSERT_CUSTOM_ON_FAIL(__condition, __custom_on_fail) 
+                #define TRC_ASSERT_CUSTOM_ON_FAIL( __condition, __custom_on_fail )
 
-#define TRC_ASSERT_CUSTOM_ON_FAIL_ALWAYS_EVALUATE(__condition, __custom_on_fail) (__condition)
+                #define TRC_ASSERT_CUSTOM_ON_FAIL_ALWAYS_EVALUATE( __condition, __custom_on_fail )    ( __condition )
 
-#define TRC_ASSERT_EQUAL_SIZE(x, y)
+                #define TRC_ASSERT_EQUAL_SIZE( x, y )
 
-typedef struct TraceAssertData
-{
-	TraceUnsignedBaseType_t buffer[1];
-} TraceAssertData_t;
+                typedef struct TraceAssertData
+                {
+                    TraceUnsignedBaseType_t buffer[ 1 ];
+                } TraceAssertData_t;
 
-#define xTraceAssertInitialize(pxBuffer) ((void)pxBuffer, TRC_SUCCESS)
+                #define xTraceAssertInitialize( pxBuffer )                          ( ( void ) pxBuffer, TRC_SUCCESS )
 
-#define xTraceAssertGet(pxFileNameStringHandle, puxLineNumber) ((void)pxFileNameStringHandle, (void)puxLineNumber, TRC_FAIL)
+                #define xTraceAssertGet( pxFileNameStringHandle, puxLineNumber )    ( ( void ) pxFileNameStringHandle, ( void ) puxLineNumber, TRC_FAIL )
 
-#endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
+            #endif /* ((TRC_CFG_USE_TRACE_ASSERT) == 1) */
 
 /** @} */
 
-#ifdef __cplusplus
+            #ifdef __cplusplus
 }
-#endif
+            #endif
 
-#endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
+        #endif /* (TRC_CFG_RECORDER_MODE == TRC_RECORDER_MODE_STREAMING) */
 
-#endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */
+    #endif /* (TRC_USE_TRACEALYZER_RECORDER == 1) */
 
 #endif /* TRC_ASSERT_H */

@@ -108,14 +108,15 @@ BaseType_t connectToServerWithBackoffRetries( TransportConnect_t connectFunction
 
         if( xReturn != pdPASS )
         {
-        	uint32_t ulValue;
+            uint32_t ulValue;
+
             /* Generate a random number and calculate backoff value (in milliseconds) for
              * the next connection retry.
              * Note: It is recommended to seed the random number generator with a device-specific
              * entropy source so that possibility of multiple devices retrying failed network operations
              * at similar intervals can be avoided. */
-        	BaseType_t xApplicationGetRandomNumber( uint32_t *pulValue );
-        	xApplicationGetRandomNumber(&ulValue);
+            BaseType_t xApplicationGetRandomNumber( uint32_t * pulValue );
+            xApplicationGetRandomNumber( &ulValue );
             xBackoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &xReconnectParams, ulValue, &usNextBackoff );
 
             if( xBackoffAlgStatus == BackoffAlgorithmSuccess )

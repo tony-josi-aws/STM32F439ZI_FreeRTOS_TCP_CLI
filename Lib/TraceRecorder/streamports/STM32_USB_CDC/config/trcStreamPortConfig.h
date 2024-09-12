@@ -9,46 +9,46 @@
  */
 
 #ifndef TRC_STREAM_PORT_CONFIG_H
-#define TRC_STREAM_PORT_CONFIG_H
+    #define TRC_STREAM_PORT_CONFIG_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
 
 /**
  * @def TRC_CFG_STREAM_PORT_DELAY_ON_BUSY
  *
  * @brief The time to wait if the USB interface is busy.
  */
-#define TRC_CFG_STREAM_PORT_DELAY_ON_BUSY 1
+    #define TRC_CFG_STREAM_PORT_DELAY_ON_BUSY                                       1
 
 /**
  * @def TRC_CFG_STREAM_PORT_USB_BUFFER_SIZE
  *
  * @brief Specifies the size of the usb buffer.
  */
-#define TRC_CFG_STREAM_PORT_USB_BUFFER_SIZE 64
+    #define TRC_CFG_STREAM_PORT_USB_BUFFER_SIZE                                     64
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_SIZE
  *
  * @brief Configures the size of the internal buffer if used.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_SIZE 10240
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_SIZE                                10240
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_WRITE_MODE
  *
  * @brief This should be set to TRC_INTERNAL_EVENT_BUFFER_OPTION_WRITE_MODE_DIRECT for best performance.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_WRITE_MODE TRC_INTERNAL_EVENT_BUFFER_OPTION_WRITE_MODE_DIRECT
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_WRITE_MODE                          TRC_INTERNAL_EVENT_BUFFER_OPTION_WRITE_MODE_DIRECT
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_TRANSFER_MODE
  *
  * @brief Defines if the internal buffer will attempt to transfer all data each time or limit it to a chunk size.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_TRANSFER_MODE TRC_INTERNAL_EVENT_BUFFER_OPTION_TRANSFER_MODE_ALL
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_TRANSFER_MODE                       TRC_INTERNAL_EVENT_BUFFER_OPTION_TRANSFER_MODE_ALL
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_SIZE
@@ -56,7 +56,7 @@ extern "C" {
  * @brief Defines the maximum chunk size when transferring
  * internal buffer events in chunks.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_SIZE 64
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_SIZE                          64
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT
@@ -66,7 +66,7 @@ extern "C" {
  * of additional transfers this loop.
  * This will increase throughput by immediately doing a transfer and not wait for another xTraceTzCtrl() loop.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT 64
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_SIZE_LIMIT     64
 
 /**
  * @def TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT
@@ -76,10 +76,10 @@ extern "C" {
  * transferred in the last loop.
  * This will increase throughput by immediately doing a transfer and not wait for another xTraceTzCtrl() loop.
  */
-#define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT 5
+    #define TRC_CFG_STREAM_PORT_INTERNAL_BUFFER_CHUNK_TRANSFER_AGAIN_COUNT_LIMIT    5
 
-#ifdef __cplusplus
+    #ifdef __cplusplus
 }
-#endif
+    #endif
 
 #endif /* TRC_STREAM_PORT_CONFIG_H */
