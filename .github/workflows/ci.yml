@@ -27,4 +27,4 @@ jobs:
       - name: Check Formatting
         uses: FreeRTOS/CI-CD-Github-Actions/formatting@main
         with:
-          exclude-dirs: Lib/backoffAlgorithm, Lib/coreHTTP, Lib/FreeRTOS-Kernel, Lib/FreeRTOS-Plus-CLI, Lib/TraceRecorder, Drivers, Core
+          exclude-dirs: Drivers, Core, Lib/backoffAlgorithm, Lib/coreHTTP, Lib/FreeRTOS-Kernel, Lib/TraceRecorder
