@@ -58,9 +58,9 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_LOOPBACK_INTERFACE                 1
+#define USE_LOOPBACK_INTERFACE                 0
 
-#define mainCREATE_TCP_LOOPBACK_TASK_SINGLE    1
+#define mainCREATE_TCP_LOOPBACK_TASK_SINGLE    0
 
 #define USE_IPv6_END_POINTS                    0
 
@@ -76,7 +76,7 @@
 
 #define USE_TCP_ZERO_COPY                      1
 
-#define USE_USER_COMMAND_TASK                  0
+#define USE_USER_COMMAND_TASK                  1
 
 #define USE_TCP_ECHO_CLIENT                    0
 
@@ -89,12 +89,18 @@
 /* The standard echo port number. */
 #define tcpechoPORT_NUMBER                     7
 
-#if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
-    #define TOTAL_ENDPOINTS                    ( 3 + 1 )
+#if ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 && USE_LOOPBACK_INTERFACE != 0 )
+    #define TOTAL_ENDPOINTS                    ( 4 )
+#elif ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 && ipconfigUSE_IPv4 != 0 )
+    #define TOTAL_ENDPOINTS                    ( 3 )
+#elif ( ipconfigUSE_IPv4 == 0 && ipconfigUSE_IPv6 != 0 && USE_LOOPBACK_INTERFACE != 0 )
+    #define TOTAL_ENDPOINTS                    ( 3 )
 #elif ( ipconfigUSE_IPv4 == 0 && ipconfigUSE_IPv6 != 0 )
-    #define TOTAL_ENDPOINTS                    ( 2 + 1 )
+    #define TOTAL_ENDPOINTS                    ( 2 )
+#elif (ipconfigUSE_IPv4 != 0 && USE_LOOPBACK_INTERFACE != 0)
+    #define TOTAL_ENDPOINTS                    ( 2 )
 #else
-    #define TOTAL_ENDPOINTS                    ( 1 + 1 )
+	#define TOTAL_ENDPOINTS                    ( 1 )
 #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
 
 #if USE_LOOPBACK_INTERFACE
