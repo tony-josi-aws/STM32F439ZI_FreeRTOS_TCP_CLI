@@ -212,13 +212,11 @@ void vIcmpDataSendCount( size_t bytes )
 
 void vGetRxLatency( uint64_t rtt )
 {
-    rxLatency_info =  (  rxLatency_info + rtt  * 100 ) / 2 ;
-
+    rxLatency_info = ( rxLatency_info + rtt * 100 ) / 2;
 }
 
 void vGetTxLatency( uint64_t rtt )
 {
-    txLatency_info =  (  txLatency_info + rtt  * 100 ) / 2 ;
-
+    txLatency_info = ( txLatency_info + rtt * 100 ) / 2;
 }
 /*-----------------------------------------------------------*/

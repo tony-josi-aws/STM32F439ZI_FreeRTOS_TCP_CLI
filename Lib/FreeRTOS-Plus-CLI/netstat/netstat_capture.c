@@ -18,4 +18,3 @@
 
 /* STM32 HAL includes. */
 #include "stm32f4xx_hal.h"
-

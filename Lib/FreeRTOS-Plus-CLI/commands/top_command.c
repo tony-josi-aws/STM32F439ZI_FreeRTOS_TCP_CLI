@@ -13,7 +13,9 @@
 /**
  * @brief Interpreter that handles the top command.
  */
-static portBASE_TYPE prvTopCommandInterpreter( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+static portBASE_TYPE prvTopCommandInterpreter( char * pcWriteBuffer,
+                                               size_t xWriteBufferLen,
+                                               const char * pcCommandString )
 {
     ( void ) pcCommandString;
     ( void ) xWriteBufferLen;
@@ -37,8 +39,8 @@ static const CLI_Command_Definition_t xTopCommand =
 {
     ( const char * const ) "top", /* The command string to type. */
     ( const char * const ) "top: Returns various stats about all tasks.\r\n",
-    prvTopCommandInterpreter, /* The interpreter function for the command. */
-    0 /* No parameters are expected. */
+    prvTopCommandInterpreter,     /* The interpreter function for the command. */
+    0                             /* No parameters are expected. */
 };
 
 /*-----------------------------------------------------------*/
@@ -50,4 +52,3 @@ void vRegisterTopCommand( void )
 }
 
 /*-----------------------------------------------------------*/
-

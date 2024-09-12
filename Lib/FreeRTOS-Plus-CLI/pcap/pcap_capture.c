@@ -75,7 +75,8 @@ void pcap_capture_get_captured_data( const uint8_t ** pp_captured_data,
 
 /*-----------------------------------------------------------*/
 
-void pcap_capture_record_packet( const uint8_t * p_packet, uint32_t packet_length )
+void pcap_capture_record_packet( const uint8_t * p_packet,
+                                 uint32_t packet_length )
 {
     uint32_t milliseconds;
     pcap_writer_timeval_t timestamp;

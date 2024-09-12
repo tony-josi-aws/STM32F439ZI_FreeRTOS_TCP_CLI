@@ -7,34 +7,36 @@
 
 /**
  * Values used in pcap file header.
-*/
-#define PCAP_WRITER_TCPDUMP_MAGIC       0xa1b2c3d4
-#define PCAP_WRITER_PCAP_VERSION_MAJOR  2
-#define PCAP_WRITER_PCAP_VERSION_MINOR  4
+ */
+#define PCAP_WRITER_TCPDUMP_MAGIC         0xa1b2c3d4
+#define PCAP_WRITER_PCAP_VERSION_MAJOR    2
+#define PCAP_WRITER_PCAP_VERSION_MINOR    4
 
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Represents pcap file header present at the beginning of the file.
  */
-typedef struct pcap_writer_pcap_file_header {
-    uint32_t magic;             /**< Helps the reader determine the endianess. */
-    uint16_t version_major;     /**< Major version number of pcap file format. */
-    uint16_t version_minor;     /**< Minor version number of pcap file format. */
-    int32_t this_zone;          /**< 4-byte time zone offset; this is always 0. */
-    uint32_t sigfigs;           /**< 4-byte number giving the accuracy of time stamps
-                                     in the file; this is always 0. */
-    uint32_t snaplen;           /**< Maximum length of each packet stored. Anything extra is truncated. */
-    uint32_t link_type;         /**< Network linktype. Only Ethernet is supported. */
+typedef struct pcap_writer_pcap_file_header
+{
+    uint32_t magic;         /**< Helps the reader determine the endianess. */
+    uint16_t version_major; /**< Major version number of pcap file format. */
+    uint16_t version_minor; /**< Minor version number of pcap file format. */
+    int32_t this_zone;      /**< 4-byte time zone offset; this is always 0. */
+    uint32_t sigfigs;       /**< 4-byte number giving the accuracy of time stamps
+                             *   in the file; this is always 0. */
+    uint32_t snaplen;       /**< Maximum length of each packet stored. Anything extra is truncated. */
+    uint32_t link_type;     /**< Network linktype. Only Ethernet is supported. */
 } pcap_writer_pcap_file_header_t;
 
 /**
  * @brief Represents packet header present at the beginning of each packet.
  */
-typedef struct pcap_writer_packet_header {
-    pcap_writer_timeval_t ts;   /**< Timestamp associated with the packet. */
-    uint32_t caplen;            /**< Length of the packet actually captured. */
-    uint32_t len;               /**< Length of the packet. */
+typedef struct pcap_writer_packet_header
+{
+    pcap_writer_timeval_t ts; /**< Timestamp associated with the packet. */
+    uint32_t caplen;          /**< Length of the packet actually captured. */
+    uint32_t len;             /**< Length of the packet. */
 } pcap_writer_packet_header_t;
 
 /*-----------------------------------------------------------*/
@@ -144,7 +146,7 @@ pcap_writer_error_t pcap_writer_write_packet( pcap_writer_context_t * p_ctx,
 
 uint32_t pcap_writer_get_capture_len( const pcap_writer_context_t * p_ctx )
 {
-    return ( p_ctx->capture_buf_len - p_ctx->remaining_len );
+    return( p_ctx->capture_buf_len - p_ctx->remaining_len );
 }
 
 /*-----------------------------------------------------------*/

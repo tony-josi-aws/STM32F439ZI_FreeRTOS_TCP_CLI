@@ -1,4 +1,4 @@
-# FreeRTOS Kernel + TCP/IP Stack CLI 
+# FreeRTOS Kernel + TCP/IP Stack CLI
 
 This project is a demo integration of the FreeRTOS Kernel and the FreeRTOS + TCP/IP (IPv4 for now) stack with FreeRTOS CLI over UDP/TCP on the STM32F439ZI NUCLEO board.
 
@@ -81,4 +81,4 @@ iperf Done.
 
 ## Notes:
 
-TODO: When using loopback interface with TCP zero copy enabled only for TCP server heap is getting corrupted and the TCP segments are being run out. Most likely an application issue with how application is using the zero copy. Pending debug...
+TODO: When using loopback interface with TCP zero copy enabled only for TCP server, heap is getting corrupted and the TCP segments are being run out. Most likely an application issue with how application is using the zero copy. Pending debug...

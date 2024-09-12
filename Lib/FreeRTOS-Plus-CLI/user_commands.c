@@ -55,7 +55,7 @@ BaseType_t xHandleTestingCommand( char * pcCommand,
 
 const char * pcCommandList[] =
 {
-        "arpqc 192.168.1.5",    // a public IP-address */
+    "arpqc 192.168.1.5", /* a public IP-address * / */
     /*    "arpqc fe80::ba27:ebff:fe5a:d751", // a gateway */
     /*    "arpqc 192.168.2.1", */
     /*    "arpqc 172.217.194.100", */
@@ -75,8 +75,8 @@ const char * pcCommandList[] =
     /*      "http 2404:6800:4003:c05::5e /index.html 80", */
     /*      "ping6 2606:4700:f1::1", */
     /*      "ping6 2606:4700:f1::1", */
-          "dnsq4  aws.amazon.com",
-          "dnsq6  google.nl",
+    "dnsq4  aws.amazon.com",
+    "dnsq6  google.nl",
     /*      "dnsq4  google.es", */
     /*      "dnsq6  google.co.uk", */
     /*      "udp 192.168.2.11@7 Hello world 1\r\n", */
@@ -172,32 +172,32 @@ void prvServerWorkTask( void * pvArgument )
     xServerSemaphore = xSemaphoreCreateBinary();
     configASSERT( xServerSemaphore != NULL );
 
-    //FreeRTOS_SetDNSIPPreference(xPreferenceIPv6);
+    /*FreeRTOS_SetDNSIPPreference(xPreferenceIPv6); */
 
     /* pcap_prepare(); */
 
     /* Wait for all end-points to come up.
      * They're counted with 'uxNetworkisUp'. */
-    // do
-    // {
-    //     vTaskDelay( pdMS_TO_TICKS( 100U ) );
-    // } while( uxNetworkisUp != mainNETWORK_UP_COUNT );
+    /* do */
+    /* { */
+    /*     vTaskDelay( pdMS_TO_TICKS( 100U ) ); */
+    /* } while( uxNetworkisUp != mainNETWORK_UP_COUNT ); */
 
-    // xDNS_IP_Preference = xPreferenceIPv6;
+    /* xDNS_IP_Preference = xPreferenceIPv6; */
 
-    // {
-    //     xSocket = FreeRTOS_socket( FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP );
-    //     struct freertos_sockaddr xAddress;
+    /* { */
+    /*     xSocket = FreeRTOS_socket( FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP ); */
+    /*     struct freertos_sockaddr xAddress; */
 
-    //     ( void ) memset( &( xAddress ), 0, sizeof( xAddress ) );
-    //     xAddress.sin_family = FREERTOS_AF_INET6;
-    //     xAddress.sin_port = FreeRTOS_htons( 5000U );
+    /*     ( void ) memset( &( xAddress ), 0, sizeof( xAddress ) ); */
+    /*     xAddress.sin_family = FREERTOS_AF_INET6; */
+    /*     xAddress.sin_port = FreeRTOS_htons( 5000U ); */
 
-    //     BaseType_t xReturn = FreeRTOS_bind( xSocket, &xAddress, ( socklen_t ) sizeof( xAddress ) );
-    //     FreeRTOS_printf( ( "Open socket %d bind = %d\n", xSocketValid( xSocket ), xReturn ) );
-    //     TickType_t xTimeoutTime = pdMS_TO_TICKS( 10U );
-    //     FreeRTOS_setsockopt( xSocket, 0, FREERTOS_SO_RCVTIMEO, &xTimeoutTime, sizeof( TickType_t ) );
-    // }
+    /*     BaseType_t xReturn = FreeRTOS_bind( xSocket, &xAddress, ( socklen_t ) sizeof( xAddress ) ); */
+    /*     FreeRTOS_printf( ( "Open socket %d bind = %d\n", xSocketValid( xSocket ), xReturn ) ); */
+    /*     TickType_t xTimeoutTime = pdMS_TO_TICKS( 10U ); */
+    /*     FreeRTOS_setsockopt( xSocket, 0, FREERTOS_SO_RCVTIMEO, &xTimeoutTime, sizeof( TickType_t ) ); */
+    /* } */
 
     for( ; ; )
     {
@@ -206,12 +206,12 @@ void prvServerWorkTask( void * pvArgument )
 
         if( xCommandIndex < ARRAY_SIZE( pcCommandList ) )
         {
-            // while( uxTickCount != 0 )
-            // {
-            //     xHandleTesting();
-            //     xSemaphoreTake( xServerSemaphore, pdMS_TO_TICKS( 10 ) );
-            //     uxTickCount--;
-            // }
+            /* while( uxTickCount != 0 ) */
+            /* { */
+            /*     xHandleTesting(); */
+            /*     xSemaphoreTake( xServerSemaphore, pdMS_TO_TICKS( 10 ) ); */
+            /*     uxTickCount--; */
+            /* } */
 
             /*          vTaskDelay( pdMS_TO_TICKS( 1000U ) ); */
             FreeRTOS_printf( ( "\n" ) );
@@ -230,61 +230,60 @@ void prvServerWorkTask( void * pvArgument )
 
 
             #if ( ipconfigUSE_NTP_DEMO != 0 )
-                /* if (xNTPTaskIsRunning() != pdFALSE) */
-                {
-                    /* Ask once more for the current time. */
-                    /*   vStartNTPTask(0U, 0U); */
-                }
+            /* if (xNTPTaskIsRunning() != pdFALSE) */
+            {
+                /* Ask once more for the current time. */
+                /*   vStartNTPTask(0U, 0U); */
+            }
             #endif
 
             /*vTaskDelete( NULL ); */
             xCommandIndex++;
         }
 
-        // {
-        //     char pcBuffer[ 1500 ];
-        //     struct freertos_sockaddr xSourceAddress;
-        //     socklen_t xLength = sizeof( socklen_t );
-        //     int32_t rc = FreeRTOS_recvfrom( xSocket, pcBuffer, sizeof( pcBuffer ), 0, &xSourceAddress, &xLength );
+        /* { */
+        /*     char pcBuffer[ 1500 ]; */
+        /*     struct freertos_sockaddr xSourceAddress; */
+        /*     socklen_t xLength = sizeof( socklen_t ); */
+        /*     int32_t rc = FreeRTOS_recvfrom( xSocket, pcBuffer, sizeof( pcBuffer ), 0, &xSourceAddress, &xLength ); */
 
-        //     if( rc > 0 )
-        //     {
-        //         if( xSourceAddress.sin_family == FREERTOS_AF_INET6 )
-        //         {
-        //             FreeRTOS_printf( ( "Recv UDP %d bytes from %pip port %u\n", rc, xSourceAddress.sin_address.xIP_IPv6.ucBytes, FreeRTOS_ntohs( xSourceAddress.sin_port ) ) );
-        //         }
-        //         else
-        //         {
-        //             FreeRTOS_printf( ( "Recv UDP %d bytes from %xip port %u\n", rc, FreeRTOS_ntohl( xSourceAddress.sin_address.ulIP_IPv4 ), FreeRTOS_ntohs( xSourceAddress.sin_port ) ) );
-        //         }
+        /*     if( rc > 0 ) */
+        /*     { */
+        /*         if( xSourceAddress.sin_family == FREERTOS_AF_INET6 ) */
+        /*         { */
+        /*             FreeRTOS_printf( ( "Recv UDP %d bytes from %pip port %u\n", rc, xSourceAddress.sin_address.xIP_IPv6.ucBytes, FreeRTOS_ntohs( xSourceAddress.sin_port ) ) ); */
+        /*         } */
+        /*         else */
+        /*         { */
+        /*             FreeRTOS_printf( ( "Recv UDP %d bytes from %xip port %u\n", rc, FreeRTOS_ntohl( xSourceAddress.sin_address.ulIP_IPv4 ), FreeRTOS_ntohs( xSourceAddress.sin_port ) ) ); */
+        /*         } */
 
-        //         if( rc == 14 )
-        //         {
-        //             static BaseType_t xDone = 0;
+        /*         if( rc == 14 ) */
+        /*         { */
+        /*             static BaseType_t xDone = 0; */
 
-        //             if( xDone == 3 )
-        //             {
-        //                 BaseType_t xIPv6 = ( xSourceAddress.sin_family == FREERTOS_AF_INET6 ) ? pdTRUE : pdFALSE;
-        //                 FreeRTOS_printf( ( "%d: Clear %s table\n", xDone, xIPv6 ? "ND" : "ARP" ) );
+        /*             if( xDone == 3 ) */
+        /*             { */
+        /*                 BaseType_t xIPv6 = ( xSourceAddress.sin_family == FREERTOS_AF_INET6 ) ? pdTRUE : pdFALSE; */
+        /*                 FreeRTOS_printf( ( "%d: Clear %s table\n", xDone, xIPv6 ? "ND" : "ARP" ) ); */
 
-        //                 if( xIPv6 == pdTRUE )
-        //                 {
-        //                     FreeRTOS_ClearND();
-        //                 }
-        //                 else
-        //                 {
-        //                     FreeRTOS_ClearARP( NULL );
-        //                 }
+        /*                 if( xIPv6 == pdTRUE ) */
+        /*                 { */
+        /*                     FreeRTOS_ClearND(); */
+        /*                 } */
+        /*                 else */
+        /*                 { */
+        /*                     FreeRTOS_ClearARP( NULL ); */
+        /*                 } */
 
-        //                 xDone = 0;
-        //             }
-        //             else
-        //             {
-        //                 xDone++;
-        //             }
-        //         }
-        //     }
-        // }
+        /*                 xDone = 0; */
+        /*             } */
+        /*             else */
+        /*             { */
+        /*                 xDone++; */
+        /*             } */
+        /*         } */
+        /*     } */
+        /* } */
     }
 }
-

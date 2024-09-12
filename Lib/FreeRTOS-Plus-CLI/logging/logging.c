@@ -163,7 +163,8 @@ static void prvLoggingTask( void * pvParameters )
 
 /*-----------------------------------------------------------*/
 
-void vLoggingPrintf( const char * pcFormat, ... )
+void vLoggingPrintf( const char * pcFormat,
+                     ... )
 {
     size_t xLength = 0;
     char * pcPrintString = NULL;
@@ -190,7 +191,7 @@ void vLoggingPrintf( const char * pcFormat, ... )
         }
 
         pcPrintString[ xLength ] = '\r';
-        pcPrintString[ xLength + 1] = '\0';
+        pcPrintString[ xLength + 1 ] = '\0';
 
         /* Send the string to the logging task for IO. */
         if( xQueueSend( xQueue, &pcPrintString, loggingDONT_BLOCK ) != pdPASS )

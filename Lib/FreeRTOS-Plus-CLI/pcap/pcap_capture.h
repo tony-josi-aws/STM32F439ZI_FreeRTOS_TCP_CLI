@@ -34,6 +34,7 @@ void pcap_capture_get_captured_data( const uint8_t ** pp_captured_data,
  * @param p_packet Packet to capture.
  * @param packet_length Length of the packet.
  */
-void pcap_capture_record_packet( const uint8_t * p_packet, uint32_t packet_length );
+void pcap_capture_record_packet( const uint8_t * p_packet,
+                                 uint32_t packet_length );
 
 #endif /* #ifndef PCAP_CAPTURE_H */
