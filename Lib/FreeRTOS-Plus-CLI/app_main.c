@@ -97,10 +97,10 @@
     #define TOTAL_ENDPOINTS                    ( 3 )
 #elif ( ipconfigUSE_IPv4 == 0 && ipconfigUSE_IPv6 != 0 )
     #define TOTAL_ENDPOINTS                    ( 2 )
-#elif (ipconfigUSE_IPv4 != 0 && USE_LOOPBACK_INTERFACE != 0)
+#elif ( ipconfigUSE_IPv4 != 0 && USE_LOOPBACK_INTERFACE != 0 )
     #define TOTAL_ENDPOINTS                    ( 2 )
 #else
-	#define TOTAL_ENDPOINTS                    ( 1 )
+    #define TOTAL_ENDPOINTS                    ( 1 )
 #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
 
 #if USE_LOOPBACK_INTERFACE
