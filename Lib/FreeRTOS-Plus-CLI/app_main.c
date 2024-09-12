@@ -287,7 +287,7 @@ void app_main( void )
             #if ( ipconfigUSE_DHCP != 0 )
             {
                 /* End-point 0 wants to use DHCPv4. */
-                xEndPoints[ xEndPointCount ].bits.bWantDHCP = pdTRUE;   /* pdFALSE; // pdTRUE; */
+                xEndPoints[ xEndPointCount ].bits.bWantDHCP = pdTRUE; /* pdFALSE; // pdTRUE; */
             }
             #endif /* ( ipconfigUSE_DHCP != 0 ) */
 
@@ -337,9 +337,9 @@ void app_main( void )
                                         &( xEndPoints[ xEndPointCount ] ),
                                         &( xIPAddress ),
                                         &( xPrefix ),
-                                        64uL,     /* Prefix length. */
+                                        64uL, /* Prefix length. */
                                         &( xGateWay ),
-                                        NULL,     /* pxDNSServerAddress: Not used yet. */
+                                        NULL, /* pxDNSServerAddress: Not used yet. */
                                         ucMACAddress );
             FreeRTOS_inet_pton6( "2001:4860:4860::8888", xEndPoints[ xEndPointCount ].ipv6_settings.xDNSServerAddresses[ 0 ].ucBytes );
             FreeRTOS_inet_pton6( "fe80::1", xEndPoints[ xEndPointCount ].ipv6_settings.xDNSServerAddresses[ 1 ].ucBytes );
@@ -380,9 +380,9 @@ void app_main( void )
                 &( xEndPoints[ xEndPointCount ] ),
                 &( xIPAddress ),
                 &( xPrefix ),
-                10U,      /* Prefix length. */
-                NULL,     /* No gateway */
-                NULL,     /* pxDNSServerAddress: Not used yet. */
+                10U,  /* Prefix length. */
+                NULL, /* No gateway */
+                NULL, /* pxDNSServerAddress: Not used yet. */
                 ucMACAddress );
 
             xEndPointCount += 1;
@@ -390,7 +390,7 @@ void app_main( void )
         #endif /* ( ipconfigUSE_IPv6 != 0 && USE_IPv6_END_POINTS != 0 ) */
 
         FreeRTOS_IPInit_Multi();
-    #else  /* if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
+    #else /* if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
         /* Using the old /single /IPv4 library, or using backward compatible mode of the new /multi library. */
         FreeRTOS_debug_printf( ( "FreeRTOS_IPInit\r\n" ) );
         /*memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress); */
@@ -470,7 +470,7 @@ void app_main( void )
                 memcpy( ( void * ) ( &( cInputCommandString_UDP[ 0 ] ) ), pucReceivedUDPPayload, xCount );
 
                 FreeRTOS_ReleaseUDPPayloadBuffer( ( void * ) pucReceivedUDPPayload );
-            #else  /* if USE_ZERO_COPY */
+            #else /* if USE_ZERO_COPY */
                 xCount = FreeRTOS_recvfrom( xCLIServerSocket,
                                             ( void * ) ( &( cInputCommandString_UDP[ 0 ] ) ),
                                             configMAX_COMMAND_INPUT_SIZE,
@@ -499,7 +499,7 @@ void app_main( void )
                                         xSourceAddress.sin_port,
                                         &( cInputCommandString_UDP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                     #endif
-                #else  /* ifdef TIM7_TEST */
+                #else /* ifdef TIM7_TEST */
                     #if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                         configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                         xSourceAddress.sin_port,
@@ -687,7 +687,7 @@ void app_main( void )
                 {
                     xCount = -1;
                 }
-            #else  /* if USE_TCP_ZERO_COPY */
+            #else /* if USE_TCP_ZERO_COPY */
                 xCount = FreeRTOS_recv( xCLIServerSocket, pucRxBuffer, ipconfigTCP_MSS, 0 );
             #endif /* USE_TCP_ZERO_COPY */
 
@@ -720,7 +720,7 @@ void app_main( void )
                                             xSourceAddress.sin_port,
                                             &( cInputCommandString_TCP[ PACKET_HEADER_LENGTH ] ), tim7_period ) );
                         #endif
-                    #else  /* ifdef TIM7_TEST */
+                    #else /* ifdef TIM7_TEST */
                         #if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
                             configPRINTF( ( "Received command. IP:%x Port:%u Content:%s \n", xSourceAddress.sin_address.ulIP_IPv4,
                                             xSourceAddress.sin_port,
@@ -941,8 +941,8 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket,
                 /* Socket closed? */
                 ret = pdFAIL;
             }
-        #else  /* if USE_TCP_ZERO_COPY */
-              /* Send response. */
+        #else /* if USE_TCP_ZERO_COPY */
+            /* Send response. */
 
             lBytes = sizeof( PacketHeader_t );
             lSent = 0;
@@ -1017,7 +1017,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket,
                     /*FreeRTOS_ReleaseUDPPayloadBuffer(pucBuffer); */
                 #endif /* if 0 */
                 uint8_t * pucBuffer = FreeRTOS_GetUDPPayloadBuffer_Multi( sizeof( PacketHeader_t ), portMAX_DELAY, ipTYPE_IPv4 );
-            #else  /* if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
+            #else /* if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
                 uint8_t * pucBuffer = FreeRTOS_GetUDPPayloadBuffer( sizeof( PacketHeader_t ), portMAX_DELAY );
             #endif /* if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 ) */
             configASSERT( pucBuffer != NULL );
@@ -1032,7 +1032,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket,
                                           pxSourceAddress,
                                           xSourceAddressLength );
             time_check = ARM_REG_DWT_CYCCNT - time_check;
-        #else  /* if USE_ZERO_COPY */
+        #else /* if USE_ZERO_COPY */
             lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                           ( void * ) ( &header ),
                                           sizeof( PacketHeader_t ),
@@ -1115,7 +1115,7 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket,
                                               FREERTOS_ZERO_COPY,
                                               pxSourceAddress,
                                               xSourceAddressLength );
-            #else  /* if USE_ZERO_COPY */
+            #else /* if USE_ZERO_COPY */
                 /* Send response. */
                 lBytesSent = FreeRTOS_sendto( xCLIServerSocket,
                                               ( void * ) &( ucUdpResponseBuffer[ 0 ] ),
@@ -1224,8 +1224,8 @@ static BaseType_t prvIsValidRequest( const uint8_t * pucPacket,
                     /* Socket closed? */
                     break;
                 }
-            #else  /* if USE_TCP_ZERO_COPY */
-                  /* Send response. */
+            #else /* if USE_TCP_ZERO_COPY */
+                /* Send response. */
 
                 lBytes = ulBytesToSend + PACKET_HEADER_LENGTH;
                 lSent = 0;
@@ -1860,7 +1860,7 @@ void HAL_ETH_MspDeInit( ETH_HandleTypeDef * heth )
                     /*time_check = ARM_REG_DWT_CYCCNT - time_check; */
                     /*xTaskResumeAll(); */
                     FreeRTOS_debug_printf( ( "FreeRTOS_sendto: DELTA: %u\r\n", time_check ) );
-                #else  /* if USE_ZERO_COPY */
+                #else /* if USE_ZERO_COPY */
                     /* Send response. */
                     FreeRTOS_sendto( xListeningSocket, cRXString, lBytes + strlen( cRX_Prefix ), 0, &xClient, xClientLength );
                 #endif /* USE_ZERO_COPY */

@@ -55,7 +55,7 @@ BaseType_t xHandleTestingCommand( char * pcCommand,
 
 const char * pcCommandList[] =
 {
-    "arpqc 192.168.1.5",        /* a public IP-address * / */
+    "arpqc 192.168.1.5", /* a public IP-address * / */
     /*    "arpqc fe80::ba27:ebff:fe5a:d751", // a gateway */
     /*    "arpqc 192.168.2.1", */
     /*    "arpqc 172.217.194.100", */

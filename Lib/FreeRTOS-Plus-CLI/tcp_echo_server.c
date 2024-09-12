@@ -205,7 +205,7 @@
                     {
                         lBytes = -1;
                     }
-                #else  /* if USE_TCP_ZERO_COPY */
+                #else /* if USE_TCP_ZERO_COPY */
                     lBytes = FreeRTOS_recv( xConnectedSocket, pucRxBuffer, ipconfigTCP_MSS, 0 );
                 #endif /* USE_TCP_ZERO_COPY */
 
@@ -251,7 +251,7 @@
                             /* Socket closed? */
                             break;
                         }
-                    #else  /* if USE_TCP_ZERO_COPY */
+                    #else /* if USE_TCP_ZERO_COPY */
                         /* Call send() until all the data has been sent. */
                         while( ( lSent >= 0 ) && ( lTotalSent < lBytes ) )
                         {
