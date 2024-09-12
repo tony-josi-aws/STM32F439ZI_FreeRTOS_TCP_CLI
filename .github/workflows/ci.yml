@@ -1,0 +1,30 @@
+name: CI Checks
+
+env:
+  bashPass: \033[32;1mPASSED -
+  bashInfo: \033[33;1mINFO -
+  bashFail: \033[31;1mFAILED -
+  bashEnd:  \033[0m
+
+on:
+    push:
+    pull_request:
+    workflow_dispatch:
+
+jobs:
+  git-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+            submodules: recursive
+
+  formatting:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Formatting
+        uses: FreeRTOS/CI-CD-Github-Actions/formatting@main
+        with:
+          exclude-dirs: Lib/backoffAlgorithm, Lib/coreHTTP, Lib/FreeRTOS-Kernel, Lib/FreeRTOS-Plus-CLI, Lib/TraceRecorder, Drivers, Core
