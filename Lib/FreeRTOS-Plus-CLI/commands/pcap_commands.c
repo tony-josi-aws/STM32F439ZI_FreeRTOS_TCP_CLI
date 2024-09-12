@@ -17,7 +17,9 @@
 /**
  * @brief Interpreter that handles the pcap command.
  */
-static portBASE_TYPE prvPcapCommandInterpreter( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+static portBASE_TYPE prvPcapCommandInterpreter( char * pcWriteBuffer,
+                                                size_t xWriteBufferLen,
+                                                const char * pcCommandString )
 {
     const char * pcCommandParameter;
     BaseType_t xCommandParameterLength;
@@ -71,8 +73,8 @@ static const CLI_Command_Definition_t xPcapCommand =
 {
     ( const char * const ) "pcap", /* The command string to type. */
     ( const char * const ) "pcap: Starts, stops and gets the packet capture according to the parameter - start/stop/get.\r\n",
-    prvPcapCommandInterpreter, /* The interpreter function for the command. */
-    1 /* One parameter - start, stop or get. */
+    prvPcapCommandInterpreter,     /* The interpreter function for the command. */
+    1                              /* One parameter - start, stop or get. */
 };
 
 /*-----------------------------------------------------------*/

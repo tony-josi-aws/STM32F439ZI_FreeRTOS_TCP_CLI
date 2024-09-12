@@ -13,7 +13,9 @@
 /**
  * @brief Interpreter that handles the ping command.
  */
-static portBASE_TYPE prvPingCommandInterpreter( char *pcWriteBuffer, size_t xWriteBufferLen, const char *pcCommandString )
+static portBASE_TYPE prvPingCommandInterpreter( char * pcWriteBuffer,
+                                                size_t xWriteBufferLen,
+                                                const char * pcCommandString )
 {
     ( void ) pcCommandString;
 
@@ -34,8 +36,8 @@ static const CLI_Command_Definition_t xPingCommand =
 {
     ( const char * const ) "ping", /* The command string to type. */
     ( const char * const ) "ping: Returns OK.\r\n",
-    prvPingCommandInterpreter, /* The interpreter function for the command. */
-    0 /* No parameters are expected. */
+    prvPingCommandInterpreter,     /* The interpreter function for the command. */
+    0                              /* No parameters are expected. */
 };
 
 /*-----------------------------------------------------------*/
@@ -47,4 +49,3 @@ void vRegisterPingCommand( void )
 }
 
 /*-----------------------------------------------------------*/
-

@@ -9,7 +9,7 @@
  *
  * Need to define here as we do not depend on libpcap.
  */
-#define PCAP_WRITER_LINKTYPE_ETHERNET       1
+#define PCAP_WRITER_LINKTYPE_ETHERNET    1
 
 /*-----------------------------------------------------------*/
 
@@ -32,11 +32,11 @@ typedef enum pcap_writer_error
  */
 typedef struct pcap_writer_context
 {
-    uint8_t * capture_buf;      /**< Buffer in which the pcap capture is stored. */
-    uint32_t capture_buf_len;   /**< Length of capture_buf. */
-    uint8_t * cur;              /**< Next location to write in capture_buf. */
-    uint32_t remaining_len;     /**< Remaining length in capture_buf. */
-    uint32_t snaplen;           /**< Maximum length of each packet stored. Anything extra is truncated. */
+    uint8_t * capture_buf;    /**< Buffer in which the pcap capture is stored. */
+    uint32_t capture_buf_len; /**< Length of capture_buf. */
+    uint8_t * cur;            /**< Next location to write in capture_buf. */
+    uint32_t remaining_len;   /**< Remaining length in capture_buf. */
+    uint32_t snaplen;         /**< Maximum length of each packet stored. Anything extra is truncated. */
 } pcap_writer_context_t;
 
 /*-----------------------------------------------------------*/
@@ -44,7 +44,8 @@ typedef struct pcap_writer_context
 /**
  * @brief Represents a timestamp.
  */
-typedef struct pcap_writer_timeval {
+typedef struct pcap_writer_timeval
+{
     int32_t tv_sec;
     int32_t tv_usec;
 } pcap_writer_timeval_t;
