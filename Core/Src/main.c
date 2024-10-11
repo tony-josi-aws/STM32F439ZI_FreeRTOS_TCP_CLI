@@ -171,7 +171,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_RNG_Init();
-
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
 #if ENABLE_CYCLE_COUNT
