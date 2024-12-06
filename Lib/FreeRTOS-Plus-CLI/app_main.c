@@ -12,7 +12,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "stm32fxx_hal_eth.h"
+#include "stm32f4xx_hal_eth.h"
 
 /* ST includes. */
 #if defined( STM32F7xx )
@@ -229,17 +229,17 @@ void app_main( void )
 
     configPRINTF( ( "Calling FreeRTOS_IPInit...\n" ) );
     //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress );
-	#if ( ipconfigMULTI_INTERFACE == 1 ) && ( ipconfigCOMPATIBLE_WITH_SINGLE == 0 )
-    	static NetworkInterface_t xInterfaces[1];
-    	static NetworkEndPoint_t xEndPoints[4];
-	#endif
+
+    static NetworkInterface_t xInterfaces[1];
+    static NetworkEndPoint_t xEndPoints[4];
+
     //FreeRTOS_debug_printf((“FreeRTOS_IPInit\r\n”));
-	memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
+	//memcpy(ipLOCAL_MAC_ADDRESS, ucMACAddress, sizeof ucMACAddress);
 
 	/* Initialize the network interface.*/
     #if defined(ipconfigIPv4_BACKWARD_COMPATIBLE) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         /* Initialize the interface descriptor for WinPCap. */
-        pxSTM32Fxx_FillInterfaceDescriptor(0, &(xInterfaces[0]));
+        pxSTM32_FillInterfaceDescriptor(0, &(xInterfaces[0]));
 
         /* === End-point 0 === */
         #if ( ipconfigUSE_IPv4 != 0 )
@@ -248,7 +248,7 @@ void app_main( void )
                 #if ( ipconfigUSE_DHCP != 0 )
                 {
                     /* End-point 0 wants to use DHCPv4. */
-                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdFALSE; // pdFALSE; // pdTRUE;
+                    xEndPoints[xEndPointCount].bits.bWantDHCP = pdTRUE; // pdFALSE; // pdTRUE;
                 }
                 #endif /* ( ipconfigUSE_DHCP != 0 ) */
 

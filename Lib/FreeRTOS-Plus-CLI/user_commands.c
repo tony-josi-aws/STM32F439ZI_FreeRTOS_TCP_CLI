@@ -12,7 +12,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "stm32fxx_hal_eth.h"
+#include "stm32f4xx_hal_eth.h"
 
 /* ST includes. */
 #if defined( STM32F7xx )

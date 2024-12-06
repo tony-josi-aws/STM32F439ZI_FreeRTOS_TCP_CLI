@@ -178,7 +178,7 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674764095902</id>
+			<id>1733302632951</id>
 			<name>Lib/FreeRTOS-Plus-TCP/source/portable/NetworkInterface</name>
 			<type>9</type>
 			<matcher>
@@ -187,21 +187,39 @@
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674764095910</id>
+			<id>1733302632956</id>
 			<name>Lib/FreeRTOS-Plus-TCP/source/portable/NetworkInterface</name>
 			<type>9</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
-				<arguments>1.0-name-matches-false-false-STM32Fxx</arguments>
+				<arguments>1.0-name-matches-false-false-STM32</arguments>
 			</matcher>
 		</filter>
 		<filter>
-			<id>1674764095914</id>
+			<id>1733302632963</id>
 			<name>Lib/FreeRTOS-Plus-TCP/source/portable/NetworkInterface</name>
 			<type>9</type>
 			<matcher>
 				<id>org.eclipse.ui.ide.multiFilter</id>
 				<arguments>1.0-name-matches-false-false-include</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1733302652028</id>
+			<name>Lib/FreeRTOS-Plus-TCP/source/portable/NetworkInterface/STM32</name>
+			<type>10</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-Legacy</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1733302668900</id>
+			<name>Lib/FreeRTOS-Plus-TCP/source/portable/NetworkInterface/STM32/Drivers</name>
+			<type>9</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-F4</arguments>
 			</matcher>
 		</filter>
 	</filteredResources>

@@ -336,7 +336,7 @@ FreeRTOS_netstat() command, and ping replies.  If ipconfigHAS_PRINTF is set to 1
 then FreeRTOS_printf should be set to the function used to print out the
 messages. */
 #ifndef ipconfigHAS_PRINTF
-    #define ipconfigHAS_PRINTF                          0
+    #define ipconfigHAS_PRINTF                          1
 #endif
 
 #if( ipconfigHAS_PRINTF == 1 )
@@ -383,7 +383,7 @@ messages. */
 
 #define ipconfigARP_STORES_REMOTE_ADDRESSES             ( 1 )
 
-#define ipconfigETHERNET_DRIVER_FILTERS_PACKETS         ( 1 )
+#define ipconfigETHERNET_DRIVER_FILTERS_PACKETS         ( 0 )
 
 #define ipconfigSOCKET_HAS_USER_SEMAPHORE               1
 
