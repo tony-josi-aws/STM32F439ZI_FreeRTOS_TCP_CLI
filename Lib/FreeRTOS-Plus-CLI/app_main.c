@@ -58,9 +58,9 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_LOOPBACK_INTERFACE                 1
+#define USE_LOOPBACK_INTERFACE                 0
 
-#define mainCREATE_TCP_LOOPBACK_TASK_SINGLE    1
+#define mainCREATE_TCP_LOOPBACK_TASK_SINGLE    0
 
 #define USE_IPv6_END_POINTS                    0
 
