@@ -57,6 +57,8 @@
     #define CMSIS_device_header                    "stm32h7xx.h"
 #endif /* CMSIS_device_header */
 
+#define configUSE_LW_MUTEXES					   1
+
 #define configENABLE_FPU                           0
 #define configENABLE_MPU                           0
 

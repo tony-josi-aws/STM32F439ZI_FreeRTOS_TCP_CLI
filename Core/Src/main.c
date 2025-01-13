@@ -42,8 +42,9 @@
 
 #define LED_HW 					      0
 #define NOTIFICATION_TIMING			  0
-#define TCP_CLI					      1
+#define TCP_CLI					      0
 #define ENABLE_CYCLE_COUNT    		  1
+#define HACK2025					  1
 
 /* USER CODE END PM */
 
@@ -57,6 +58,73 @@ UART_HandleTypeDef huart3;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
+
+
+#if HACK2025
+
+#include "light-weight-mutex.h"
+
+/*******************************************************************************
+ * Preprocessor Definitions
+ ******************************************************************************/
+/* Tasks */
+#define TASK_STACK_SIZE    ( configMINIMAL_STACK_SIZE )
+
+/*******************************************************************************
+ * Static Global Variables
+ ******************************************************************************/
+/* Tasks */
+static StackType_t xTaskAStack[ TASK_STACK_SIZE ]
+__attribute__( ( aligned( TASK_STACK_SIZE * sizeof( StackType_t ) ) ) );
+
+static StackType_t xTaskBStack[ TASK_STACK_SIZE ]
+__attribute__( ( aligned( TASK_STACK_SIZE * sizeof( StackType_t ) ) ) );
+
+PRIVILEGED_DATA static StaticTask_t xTaskATCB;
+PRIVILEGED_DATA static StaticTask_t xTaskBTCB;
+
+/* Mutexes */
+LightWeightMutex_t xMutexBuffer;
+
+static void prvTaskA( void * pvParameters )
+{
+    ( void ) pvParameters;
+
+    vTaskDelay( 100 );
+
+    xReturn = lightMutexTake(xMutexBuffer, portMAX_DELAY);
+    if( xReturn == pdTRUE )
+    {
+        printf("Task A took the mutex for a wait of portMAX_DELAY ticks\n");
+    }
+    else
+    {
+        printf("Task A failed to take the mutex for a wait of portMAX_DELAY ticks\n");
+    }
+
+    xReturn = lightMutexGive( xMutexBuffer );
+    printf("Task A released the mutex\n");
+}
+
+static void prvTaskB( void * pvParameters )
+{
+    ( void ) pvParameters;
+
+    xReturn = lightMutexTake( xMutexBuffer, 150 );
+    if( xReturn == pdTRUE )
+    {
+        printf("Task B took the mutex for a wait of 0 ticks\n");
+    }
+    else
+    {
+        printf("Task B failed to take the mutex for a wait of 0 ticks\n");
+    }
+
+    xReturn = lightMutexGive( xMutexBuffer );
+    printf("Task B released the mutex\n");
+}
+
+#endif
 
 #if LED_HW
 static void task_1_thread_fn(void *io_params) {
@@ -236,6 +304,25 @@ int main(void)
 
   extern void app_main( void );
   app_main();
+
+#elif HACK2025
+
+  StaticTask_t * pxIdleTaskTCB;
+  StackType_t * pxIdleTaskStack;
+  StackType_t xIdleTaskStackSize;
+  TaskHandle_t xTaskAHandle = NULL;
+  TaskHandle_t xTaskBHandle = NULL;
+
+  /* Create Task A ( high prio ) */
+  xTaskAHandle = xTaskCreateStatic( prvTaskA, "A", TASK_STACK_SIZE, NULL, 3, &xTaskAStack, &xTaskATCB );
+
+  /* Create Task B ( low prio ) */
+  xTaskBHandle = xTaskCreateStatic( prvTaskB, "B", TASK_STACK_SIZE, NULL, 2, &xTaskBStack, &xTaskBTCB );
+
+  /* Create mutex. */
+  lightMutexInit( &xMutexBuffer );
+
+  vTaskStartScheduler();
 
 #endif
 
