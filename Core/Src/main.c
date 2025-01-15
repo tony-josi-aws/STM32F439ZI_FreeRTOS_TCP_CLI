@@ -88,13 +88,38 @@ void vToggleLED(SemaphoreHandle_t xSem, uint16_t pin, uint16_t taskId)
     {
         if( xSemaphoreTake( xSem, portMAX_DELAY ) == pdTRUE )
         {
-        	configPRINTF(("Task %d in critical section. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+          
+        	configPRINTF(("Task %d in critical section [M1]. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
 
-        	HAL_GPIO_TogglePin(GPIOB, pin);
-        	HAL_Delay(200);
-            xSemaphoreGive( xSem );
+          if( xSemaphoreTake( xSemaphore2, portMAX_DELAY ) == pdTRUE )
+          {
 
-            configPRINTF(("Task %d in outside critical section. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+            configPRINTF(("Task %d in critical section [M1, M2]. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+
+            if( xSemaphoreTake( xSemaphore3, portMAX_DELAY ) == pdTRUE )
+            {
+
+              configPRINTF(("Task %d in critical section [M1, M2, M3]. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+
+              HAL_GPIO_TogglePin(GPIOB, pin);
+              HAL_Delay(200);
+
+              xSemaphoreGive( xSemaphore3 );
+
+              configPRINTF(("Task %d in critical section [M1, M2]. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+            
+            }
+
+            xSemaphoreGive( xSemaphore2 );
+
+            configPRINTF(("Task %d in critical section [M1]. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+
+          }
+          
+          xSemaphoreGive( xSem );
+
+          configPRINTF(("Task %d in outside critical section. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+        
         }
         else
         {
