@@ -25,6 +25,9 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
+
+#include "logging.h"
 
 /* USER CODE END Includes */
 
@@ -67,15 +70,69 @@ uint32_t ulGetTim7Tick()
 	return 0;
 }
 
+
 #if LED_HW
+
+/* Logging module configuration. */
+#define mainLOGGING_TASK_STACK_SIZE    256
+#define mainLOGGING_QUEUE_LENGTH       100
+
+SemaphoreHandle_t xSemaphore1 = NULL;
+SemaphoreHandle_t xSemaphore2 = NULL;
+SemaphoreHandle_t xSemaphore3 = NULL;
+
+void vToggleLED(SemaphoreHandle_t xSem, uint16_t pin, uint16_t taskId)
+{
+
+    if( xSem != NULL )
+    {
+        if( xSemaphoreTake( xSem, portMAX_DELAY ) == pdTRUE )
+        {
+        	configPRINTF(("Task %d in critical section. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+
+        	HAL_GPIO_TogglePin(GPIOB, pin);
+        	HAL_Delay(200);
+            xSemaphoreGive( xSem );
+
+            configPRINTF(("Task %d in outside critical section. Priority: %d\r\n", taskId, uxTaskPriorityGet(NULL)));
+        }
+        else
+        {
+            /* We could not obtain the semaphore and can therefore not access
+               the shared resource safely. */
+        }
+    }
+}
+
 static void task_1_thread_fn(void *io_params) {
+
+	configPRINTF(("Task 1 starting. Priority: %d\r\n", uxTaskPriorityGet(NULL)));
+
+	while(1) {
+		vToggleLED(xSemaphore1, GPIO_PIN_7, 1);
+		vTaskDelay(20);
+	}
+}
+
+static void task_2_thread_fn(void *io_params) {
+
+	configPRINTF(("Task 2 starting. Priority: %d\r\n", uxTaskPriorityGet(NULL)));
+
+	while(1) {
+		vToggleLED(xSemaphore1, GPIO_PIN_14, 2);
+		vTaskDelay(20);
+	}
+}
+
+
+static void task_1_thread_fn_simple(void *io_params) {
 	while(1) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
 		vTaskDelay(100);
 	}
 }
 
-static void task_2_thread_fn(void *io_params) {
+static void task_2_thread_fn_simple(void *io_params) {
 	while(1) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 		vTaskDelay(200);
@@ -141,6 +198,15 @@ int main(void)
   TaskHandle_t task_1_handle, task_2_handle;
   BaseType_t ret_status;
 
+  ret_status = xLoggingTaskInitialize( mainLOGGING_TASK_STACK_SIZE,
+                                 3,
+                                 mainLOGGING_QUEUE_LENGTH );
+  configASSERT( ret_status == pdPASS );
+
+  xSemaphore1 = xSemaphoreCreateMutexICPP(3);
+  xSemaphore2 = xSemaphoreCreateMutexICPP(5);
+  xSemaphore3 = xSemaphoreCreateMutexICPP(4);
+
   ret_status = xTaskCreate(task_1_thread_fn, "Task_1", 200, "HW from 1", 2, &task_1_handle);
   configASSERT(ret_status == pdPASS);
 
@@ -164,6 +230,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+void vPrintStringToUart( const char * str )
+{
+    HAL_UART_Transmit( &( huart3 ), ( const uint8_t * ) str, strlen( str ), 1000 );
 }
 
 /**
