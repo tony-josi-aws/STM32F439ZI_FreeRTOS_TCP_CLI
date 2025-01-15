@@ -171,8 +171,27 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_RNG_Init();
-
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #if ENABLE_CYCLE_COUNT
 
@@ -181,7 +200,68 @@ int main(void)
   /* Now it should be possible to use
    * DWT->CYCCNT to get the cycle count. */
 
+  typedef struct 
+  {
+      uint32_t CTRL;
+      uint32_t CYCCNT;
+  } TestStruct_t;
+
+  TestStruct_t *samplePtr = (TestStruct_t * ) 0xE0001000UL;
+
+  samplePtr->CYCCNT = 10;
+
+  if(samplePtr->CYCCNT > 0)
+  {
+    samplePtr->CYCCNT = 0;
+  }
+  else
+  {
+    samplePtr->CYCCNT = 256;
+  }
+  samplePtr->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
+
+  
+
+
 #endif /* ENABLE_CYCLE_COUNT */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if ( configUSE_TRACE_FACILITY == 1)

@@ -12,7 +12,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "stm32fxx_hal_eth.h"
+#include "stm32f4xx_hal_eth.h"
 
 /* ST includes. */
 #if defined( STM32F7xx )
@@ -277,7 +277,7 @@ void app_main( void )
     /* Initialize the network interface.*/
     #if defined( ipconfigIPv4_BACKWARD_COMPATIBLE ) && ( ipconfigIPv4_BACKWARD_COMPATIBLE == 0 )
         /* Initialize the interface descriptor for WinPCap. */
-        pxSTM32Fxx_FillInterfaceDescriptor( 0, &( xInterfaces[ 0 ] ) );
+        pxSTM32_FillInterfaceDescriptor( 0, &( xInterfaces[ 0 ] ) );
 
         /* === End-point 0 === */
     #if ( ipconfigUSE_IPv4 != 0 )

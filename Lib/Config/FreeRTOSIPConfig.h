@@ -203,8 +203,8 @@
  * to ensure the total amount of RAM that can be consumed by the IP stack is capped
  * to a pre-determinable value. */
 
-/* #define ETH_TX_BUF_SIZE                             1536U */
-/* #define ETH_RX_BUF_SIZE                             1536U */
+    // #define ETH_TX_BUF_SIZE                             1536U
+    // #define ETH_RX_BUF_SIZE                             1536U
 
     #define iptraceFAILED_TO_OBTAIN_NETWORK_BUFFER()    configASSERT( 1 == 0 )
 
@@ -390,7 +390,7 @@
 
     #define ipconfigARP_STORES_REMOTE_ADDRESSES          ( 1 )
 
-    #define ipconfigETHERNET_DRIVER_FILTERS_PACKETS      ( 1 )
+    #define ipconfigETHERNET_DRIVER_FILTERS_PACKETS      ( 0 )
 
     #define ipconfigSOCKET_HAS_USER_SEMAPHORE            1
 
