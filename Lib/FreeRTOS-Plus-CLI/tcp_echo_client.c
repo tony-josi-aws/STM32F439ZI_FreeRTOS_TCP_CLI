@@ -58,7 +58,7 @@
 
     #define echoNUM_ECHO_CLIENTS               1
     #define echoTCP_ECHO_SERVER_PORT           7
-    #define echoTCP_ECHO_SERVER_ADDR_STRING    "127.0.0.1"
+    #define echoTCP_ECHO_SERVER_ADDR_STRING    "192.168.0.102"
 
 /* The echo tasks create a socket, send out a number of echo requests, listen
  * for the echo reply, then close the socket again before starting over.  This
@@ -226,7 +226,7 @@
         Socket_t xSocket;
         struct freertos_sockaddr xEchoServerAddress;
         int32_t lLoopCount = 0UL;
-        const int32_t lMaxLoopCount = 1;
+        const int32_t lMaxLoopCount = 1024;
         volatile uint32_t ulTxCount = 0UL;
         BaseType_t xReceivedBytes, xReturned = 0, xInstance;
         BaseType_t lTransmitted;
@@ -291,7 +291,7 @@
         xEchoServerAddress.sin_port = FreeRTOS_htons( echoTCP_ECHO_SERVER_PORT );
         xEchoServerAddress.sin_family = xFamily;
 
-        for( ; ; )
+        do // for( ; ; )
         {
             configPRINTF( ( "-------- Starting New Iteration --------\n" ) );
             BaseType_t xResult;
@@ -320,7 +320,7 @@
                 /* Send a number of echo requests. */
                 for( lLoopCount = 0; lLoopCount < lMaxLoopCount; lLoopCount++ )
                 {
-                    lTransmitted = vTCPSendData( xSocket, pcTransmittedString, &ulTxCount, echoBUFFER_SIZES );
+                    lTransmitted = vTCPSendData( xSocket, pcTransmittedString, &ulTxCount, 256); // echoBUFFER_SIZES );
 
                     if( xIsFatalError( lTransmitted ) )
                     {
@@ -455,7 +455,8 @@
             /* Pause for a short while to ensure the network is not too
              * congested. */
             vTaskDelay( echoLOOP_DELAY );
-        }
+        } while(pdFALSE);
+        vTaskDelay(portMAX_DELAY);
     }
 /*-----------------------------------------------------------*/
 

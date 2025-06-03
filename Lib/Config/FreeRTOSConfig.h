@@ -70,7 +70,7 @@
 #define configTICK_RATE_HZ                         ( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES                       ( 56 )
 #define configMINIMAL_STACK_SIZE                   ( ( uint16_t ) 128 )
-#define configTOTAL_HEAP_SIZE                      ( ( size_t ) ( 128 * 1024 ) )
+#define configTOTAL_HEAP_SIZE                      ( ( size_t ) ( 42 * 1024 ) )
 #define configMAX_TASK_NAME_LEN                    ( 16 )
 #define configUSE_TRACE_FACILITY                   1
 #define configUSE_16_BIT_TICKS                     0
@@ -214,10 +214,10 @@
 /* The address of an echo server that will be used by the two demo echo client
  * tasks.
  * http://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_TCP/examples_FreeRTOS_simulator.html */
-#define configECHO_SERVER_ADDR0    192
-#define configECHO_SERVER_ADDR1    168
-#define configECHO_SERVER_ADDR2    2
-#define configECHO_SERVER_ADDR3    3
+#define configECHO_SERVER_ADDR0    54
+#define configECHO_SERVER_ADDR1    175
+#define configECHO_SERVER_ADDR2    139
+#define configECHO_SERVER_ADDR3    22
 
 /* Logging related configuration. */
 extern void vLoggingPrintf( const char * pcFormat,

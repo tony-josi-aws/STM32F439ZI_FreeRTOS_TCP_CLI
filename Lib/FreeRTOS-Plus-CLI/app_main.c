@@ -58,7 +58,7 @@
 /*-------------  ***  DEMO DEFINES   ***   ------------------*/
 /*-----------------------------------------------------------*/
 
-#define USE_LOOPBACK_INTERFACE                 1
+#define USE_LOOPBACK_INTERFACE                 0
 
 #define mainCREATE_TCP_LOOPBACK_TASK_SINGLE    1
 
@@ -76,7 +76,9 @@
 
 #define USE_TCP_ZERO_COPY                      1
 
-#define USE_USER_COMMAND_TASK                  1
+#define USE_USER_COMMAND_TASK                  0
+
+#define PRINT_ARP_CACHE_PERIODICALLY           1
 
 #define USE_TCP_ECHO_CLIENT                    0
 
@@ -1318,6 +1320,7 @@ uint32_t ulApplicationGetNextSequenceNumber( uint32_t ulSourceAddress,
 
 static void network_up_status_thread_fn( void * io_params )
 {
+    
     while( 1 )
     {
         if( network_up == 0 )
@@ -1337,6 +1340,17 @@ static void network_up_status_thread_fn( void * io_params )
         vTaskDelay( 20 );
         HAL_GPIO_TogglePin( GPIOB, GPIO_PIN_14 );
         HAL_GPIO_TogglePin( GPIOB, GPIO_PIN_0 );
+
+        #if PRINT_ARP_CACHE_PERIODICALLY
+        {
+            static TickType_t ulPrevARPLogTickTime = 0;               
+            if(xTaskGetTickCount() > (ulPrevARPLogTickTime + 1000))
+            {
+                FreeRTOS_PrintARPCache();
+                ulPrevARPLogTickTime = xTaskGetTickCount();
+            }
+        }
+        #endif /* PRINT_ARP_CACHE_PERIODICALLY */
     }
 }
 
@@ -1519,7 +1533,7 @@ const char * pcApplicationHostnameHook( void )
     /* Assign the name "STM32H7" to this network node.  This function will be
      * called during the DHCP: the machine will be registered with an IP address
      * plus this name. */
-    return "STM32H7";
+    return "STM32F4.local";
 }
 /*-----------------------------------------------------------*/
 
