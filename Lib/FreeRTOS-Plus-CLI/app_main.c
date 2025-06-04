@@ -1519,7 +1519,7 @@ const char * pcApplicationHostnameHook( void )
     /* Assign the name "STM32H7" to this network node.  This function will be
      * called during the DHCP: the machine will be registered with an IP address
      * plus this name. */
-    return "STM32H7";
+    return "STM32H7.local";
 }
 /*-----------------------------------------------------------*/
 

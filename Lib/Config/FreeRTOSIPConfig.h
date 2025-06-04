@@ -48,6 +48,8 @@
 
     #define ipconfigUSE_IPv6                           0
 
+    #define ipconfigUSE_MDNS                           1
+
     #define ipconfigIPv4_BACKWARD_COMPATIBLE           0
 
     #define ipconfigUSE_RMII                           1
@@ -246,7 +248,7 @@
  * ipconfigCAN_FRAGMENT_OUTGOING_PACKETS is 1 then (ipconfigNETWORK_MTU - 28) must
  * be divisible by 8. */
 
-    #define ipconfigNETWORK_MTU                            ( 1500 )
+    #define ipconfigNETWORK_MTU                            ( 1512 )
 
 /* Set ipconfigUSE_DNS to 1 to include a basic DNS client/resolver.  DNS is used
  * through the FreeRTOS_gethostbyname() API function. */
